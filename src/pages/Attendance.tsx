@@ -165,23 +165,24 @@ export default function Attendance() {
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-2 py-1.5 sm:px-3 sm:py-2">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground hidden xs:block" />
+                <span className="text-xs sm:text-sm font-medium">
                   {new Date().toLocaleDateString("en-IN", {
-                    weekday: "long",
+                    weekday: "short",
                     year: "numeric",
-                    month: "long",
+                    month: "short",
                     day: "numeric",
                   })}
                 </span>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                className="text-xs sm:text-sm"
                 onClick={() => {
                   const newAttendance: Record<string, AttendanceStatus> = {};
                   studentsForAttendance.forEach((s) => {
@@ -190,9 +191,9 @@ export default function Attendance() {
                   setAttendance(newAttendance);
                 }}
               >
-                Mark All Present
+                <span className="hidden xs:inline">Mark All </span>Present
               </Button>
-              <Button size="sm">Save Attendance</Button>
+              <Button size="sm" className="text-xs sm:text-sm"><span className="hidden xs:inline">Save </span>Attendance</Button>
             </div>
           </div>
         </CardContent>
@@ -205,20 +206,20 @@ export default function Attendance() {
             Class {selectedClass}-{selectedSection} Attendance
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <CardContent className="p-3 sm:p-6">
+          <div className="grid gap-2 sm:gap-3 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {studentsForAttendance.map((student) => (
               <div
                 key={student.id}
                 className={cn(
-                  "flex items-center justify-between rounded-xl border p-4 transition-all",
+                  "flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 xs:gap-3 rounded-xl border p-3 sm:p-4 transition-all",
                   attendance[student.id] === "present" && "border-success/30 bg-success/5",
                   attendance[student.id] === "absent" && "border-destructive/30 bg-destructive/5",
                   attendance[student.id] === "late" && "border-warning/30 bg-warning/5"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                     <AvatarFallback
                       className={cn(
                         "text-xs font-medium",

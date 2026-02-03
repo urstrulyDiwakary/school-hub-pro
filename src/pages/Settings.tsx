@@ -52,29 +52,31 @@ export default function Settings() {
         </p>
       </div>
 
-      <Tabs defaultValue="school" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:grid-cols-5">
-          <TabsTrigger value="school" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">School</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Security</span>
-          </TabsTrigger>
-          <TabsTrigger value="academic" className="gap-2">
-            <Database className="h-4 w-4" />
-            <span className="hidden sm:inline">Academic</span>
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-2">
-            <Smartphone className="h-4 w-4" />
-            <span className="hidden sm:inline">Integrations</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="school" className="space-y-4 sm:space-y-6">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="inline-flex w-auto min-w-full sm:w-auto sm:min-w-0 lg:grid lg:w-auto lg:grid-cols-5 gap-1">
+            <TabsTrigger value="school" className="gap-1.5 sm:gap-2 px-3 sm:px-4 whitespace-nowrap">
+              <Building2 className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">School</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-1.5 sm:gap-2 px-3 sm:px-4 whitespace-nowrap">
+              <Bell className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Alerts</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-1.5 sm:gap-2 px-3 sm:px-4 whitespace-nowrap">
+              <Shield className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Security</span>
+            </TabsTrigger>
+            <TabsTrigger value="academic" className="gap-1.5 sm:gap-2 px-3 sm:px-4 whitespace-nowrap">
+              <Database className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Academic</span>
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="gap-1.5 sm:gap-2 px-3 sm:px-4 whitespace-nowrap">
+              <Smartphone className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">APIs</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* School Settings */}
         <TabsContent value="school" className="space-y-6">

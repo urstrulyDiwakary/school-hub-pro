@@ -146,13 +146,13 @@ export default function Reports() {
       </div>
 
       {/* Quick Reports Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
         {reportTypes.map((report) => (
           <Card key={report.title} className="stat-card group cursor-pointer">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-start justify-between">
-                <div className={`stat-card-icon ${report.color}`}>
-                  <report.icon className="h-6 w-6" />
+                <div className={`stat-card-icon flex-shrink-0 ${report.color}`}>
+                  <report.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <Button
                   variant="ghost"
@@ -162,19 +162,19 @@ export default function Reports() {
                   <Download className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="mt-4">
-                <h3 className="font-semibold text-foreground">{report.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+              <div className="mt-3 sm:mt-4">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">{report.title}</h3>
+                <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
                   {report.description}
                 </p>
               </div>
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
+              <div className="mt-3 sm:mt-4 flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm h-8 sm:h-9">
                   View
                 </Button>
-                <Button size="sm" className="flex-1 gap-1">
+                <Button size="sm" className="flex-1 gap-1 text-xs sm:text-sm h-8 sm:h-9">
                   <Download className="h-3 w-3" />
-                  Export
+                  <span className="hidden xs:inline">Export</span>
                 </Button>
               </div>
             </CardContent>
@@ -183,22 +183,23 @@ export default function Reports() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Student Growth Trend */}
         <Card className="stat-card">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-3 sm:px-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Student Growth Trend
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <span className="hidden xs:inline">Student Growth Trend</span>
+                <span className="xs:hidden">Growth Trend</span>
               </CardTitle>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-9">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
+          <CardContent className="px-2 sm:px-6">
+            <div className="h-[200px] sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyData}>
                   <defs>
@@ -233,19 +234,20 @@ export default function Reports() {
 
         {/* Fee Collection by Category */}
         <Card className="stat-card">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-3 sm:px-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <PieChart className="h-5 w-5 text-success" />
-                Fee Collection by Category
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <PieChart className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+                <span className="hidden xs:inline">Fee Collection by Category</span>
+                <span className="xs:hidden">Fee Category</span>
               </CardTitle>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-9">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
+          <CardContent className="px-2 sm:px-6">
+            <div className="h-[200px] sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
@@ -287,19 +289,20 @@ export default function Reports() {
 
       {/* Class-wise Strength */}
       <Card className="stat-card">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 px-3 sm:px-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BarChart3 className="h-5 w-5 text-info" />
-              Class-wise Student Strength
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-info" />
+              <span className="hidden xs:inline">Class-wise Student Strength</span>
+              <span className="xs:hidden">Student Strength</span>
             </CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-9">
               <Download className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="h-[320px]">
+        <CardContent className="px-2 sm:px-6">
+          <div className="h-[250px] sm:h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={classWiseStrength}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" vertical={false} />
@@ -330,26 +333,27 @@ export default function Reports() {
 
       {/* Attendance by Class */}
       <Card className="stat-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Calendar className="h-5 w-5 text-warning" />
-            Attendance Performance by Class
+        <CardHeader className="pb-2 px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+            <span className="hidden xs:inline">Attendance Performance by Class</span>
+            <span className="xs:hidden">Attendance by Class</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="px-3 sm:px-6">
+          <div className="space-y-3 sm:space-y-4">
             {attendanceByClass.map((item, index) => (
-              <div key={item.class} className="flex items-center gap-4">
-                <div className="w-20 text-sm font-medium text-foreground">{item.class}</div>
+              <div key={item.class} className="flex items-center gap-2 sm:gap-4">
+                <div className="w-16 sm:w-20 text-xs sm:text-sm font-medium text-foreground">{item.class}</div>
                 <div className="flex-1">
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
+                  <div className="h-2 sm:h-3 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-primary to-success transition-all duration-500"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
                 </div>
-                <div className="w-16 text-right text-sm font-semibold text-foreground">
+                <div className="w-12 sm:w-16 text-right text-xs sm:text-sm font-semibold text-foreground">
                   {item.percentage}%
                 </div>
               </div>

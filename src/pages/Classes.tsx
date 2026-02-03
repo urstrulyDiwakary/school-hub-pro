@@ -207,7 +207,7 @@ export default function Classes() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="stat-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -278,15 +278,15 @@ export default function Classes() {
       </Card>
 
       {/* Classes Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredClasses.map((cls) => (
           <Card key={cls.id} className="stat-card">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
               <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{cls.name}</CardTitle>
+                <CardTitle className="text-base sm:text-lg">{cls.name}</CardTitle>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -304,7 +304,7 @@ export default function Classes() {
                 </DropdownMenu>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="flex flex-wrap gap-1">
                 {cls.sections.map((section) => (
                   <span
@@ -315,14 +315,14 @@ export default function Classes() {
                   </span>
                 ))}
               </div>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Students</span>
+                  <span className="text-muted-foreground">Students</span>
                   <span className="font-medium text-foreground">{cls.totalStudents}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Class Teacher</span>
-                  <span className="font-medium text-foreground">{cls.classTeacher}</span>
+                  <span className="text-muted-foreground">Teacher</span>
+                  <span className="font-medium text-foreground truncate ml-2 max-w-[100px]">{cls.classTeacher}</span>
                 </div>
               </div>
             </CardContent>

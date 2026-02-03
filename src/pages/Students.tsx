@@ -381,30 +381,30 @@ export default function Students() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between border-t px-4 py-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-4">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing <span className="font-medium">1</span> to{" "}
             <span className="font-medium">{filteredStudents.length}</span> of{" "}
             <span className="font-medium">2,847</span> students
           </p>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            <Button variant="outline" size="sm" disabled className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               1
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
               2
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="hidden xs:flex h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
               3
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
