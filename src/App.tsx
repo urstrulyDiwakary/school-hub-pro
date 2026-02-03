@@ -9,8 +9,19 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import AddStudent from "./pages/AddStudent";
 import Teachers from "./pages/Teachers";
+import AddTeacher from "./pages/AddTeacher";
+import Staff from "./pages/Staff";
+import AddStaff from "./pages/AddStaff";
 import Fees from "./pages/Fees";
+import FeeStructure from "./pages/FeeStructure";
+import Payroll from "./pages/Payroll";
+import Classes from "./pages/Classes";
+import Subjects from "./pages/Subjects";
+import Timetable from "./pages/Timetable";
 import Attendance from "./pages/Attendance";
+import Communication from "./pages/Communication";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,25 +40,45 @@ const App = () => (
           {/* Protected routes with dashboard layout */}
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* Students */}
             <Route path="/students" element={<Students />} />
             <Route path="/students/add" element={<AddStudent />} />
             <Route path="/students/attendance" element={<Attendance />} />
+            
+            {/* Teachers */}
             <Route path="/teachers" element={<Teachers />} />
-            <Route path="/teachers/add" element={<AddStudent />} />
-            <Route path="/staff" element={<Students />} />
-            <Route path="/staff/add" element={<AddStudent />} />
+            <Route path="/teachers/add" element={<AddTeacher />} />
+            
+            {/* Non-Teaching Staff */}
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/staff/add" element={<AddStaff />} />
+            
+            {/* Fees */}
             <Route path="/fees" element={<Fees />} />
-            <Route path="/fees/structure" element={<Fees />} />
+            <Route path="/fees/structure" element={<FeeStructure />} />
             <Route path="/fees/pending" element={<Fees />} />
-            <Route path="/payroll" element={<Fees />} />
-            <Route path="/payroll/process" element={<Fees />} />
-            <Route path="/academics/classes" element={<Students />} />
-            <Route path="/academics/subjects" element={<Students />} />
-            <Route path="/academics/timetable" element={<Students />} />
+            
+            {/* Payroll */}
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/payroll/process" element={<Payroll />} />
+            
+            {/* Academics */}
+            <Route path="/academics/classes" element={<Classes />} />
+            <Route path="/academics/subjects" element={<Subjects />} />
+            <Route path="/academics/timetable" element={<Timetable />} />
+            
+            {/* Attendance */}
             <Route path="/attendance" element={<Attendance />} />
-            <Route path="/communication" element={<Dashboard />} />
-            <Route path="/reports" element={<Dashboard />} />
-            <Route path="/settings" element={<Dashboard />} />
+            
+            {/* Communication */}
+            <Route path="/communication" element={<Communication />} />
+            
+            {/* Reports */}
+            <Route path="/reports" element={<Reports />} />
+            
+            {/* Settings */}
+            <Route path="/settings" element={<Settings />} />
           </Route>
           
           {/* Catch-all */}
