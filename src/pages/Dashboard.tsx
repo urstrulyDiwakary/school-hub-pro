@@ -160,7 +160,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
         {statsCards.map((stat, index) => (
           <Card
             key={stat.title}
@@ -201,7 +201,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Fee Collection Chart */}
         <Card className="stat-card">
           <CardHeader className="pb-2">
@@ -209,8 +209,8 @@ export default function Dashboard() {
               Fee Collection Trend
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
+          <CardContent className="px-2 sm:px-6">
+            <div className="h-[220px] sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={feeCollectionData}>
                   <defs>
@@ -286,8 +286,8 @@ export default function Dashboard() {
               Students by Class
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
+          <CardContent className="px-2 sm:px-6">
+            <div className="h-[220px] sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={studentsByClass}>
                   <CartesianGrid
@@ -330,7 +330,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Attendance Trend */}
         <Card className="stat-card lg:col-span-2">
           <CardHeader className="pb-2">
@@ -338,8 +338,8 @@ export default function Dashboard() {
               Weekly Attendance Trend
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
+          <CardContent className="px-2 sm:px-6">
+            <div className="h-[200px] sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={attendanceTrend}>
                   <defs>
@@ -437,7 +437,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Gender Distribution & Recent Activity */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Gender Distribution */}
           <Card className="stat-card">
             <CardHeader className="pb-2">

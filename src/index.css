@@ -158,7 +158,7 @@
 @layer components {
   /* Stat cards */
   .stat-card {
-    @apply relative overflow-hidden rounded-xl border bg-card p-6 transition-all duration-300;
+    @apply relative overflow-hidden rounded-xl border bg-card p-4 sm:p-6 transition-all duration-300;
     box-shadow: var(--shadow-card);
   }
   
@@ -168,50 +168,61 @@
   }
 
   .stat-card-icon {
-    @apply flex h-12 w-12 items-center justify-center rounded-lg;
+    @apply flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg;
   }
 
-  /* Data tables */
+  /* Data tables - Mobile optimized */
   .data-table {
     @apply w-full border-separate border-spacing-0;
   }
 
   .data-table th {
-    @apply bg-muted/50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground first:rounded-tl-lg last:rounded-tr-lg;
+    @apply bg-muted/50 px-3 py-2.5 sm:px-4 sm:py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground first:rounded-tl-lg last:rounded-tr-lg whitespace-nowrap;
   }
 
   .data-table td {
-    @apply border-b border-border px-4 py-4 text-sm;
+    @apply border-b border-border px-3 py-3 sm:px-4 sm:py-4 text-sm;
   }
 
   .data-table tbody tr {
     @apply transition-colors hover:bg-muted/30;
   }
 
+  /* Mobile card view for tables */
+  @media (max-width: 640px) {
+    .data-table-mobile td {
+      @apply block py-2;
+    }
+    .data-table-mobile td::before {
+      content: attr(data-label);
+      @apply font-medium text-muted-foreground mr-2;
+    }
+  }
+
   /* Status badges */
   .badge-active {
-    @apply inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success;
+    @apply inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 sm:px-2.5 text-xs font-medium text-success;
   }
 
   .badge-inactive {
-    @apply inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground;
+    @apply inline-flex items-center rounded-full bg-muted px-2 py-0.5 sm:px-2.5 text-xs font-medium text-muted-foreground;
   }
 
   .badge-pending {
-    @apply inline-flex items-center rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning;
+    @apply inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 sm:px-2.5 text-xs font-medium text-warning;
   }
 
-  /* Page header */
+  /* Page header - Responsive */
   .page-header {
-    @apply mb-8;
+    @apply mb-4 sm:mb-6 lg:mb-8;
   }
 
   .page-title {
-    @apply text-2xl font-bold text-foreground;
+    @apply text-xl sm:text-2xl font-bold text-foreground;
   }
 
   .page-description {
-    @apply mt-1 text-sm text-muted-foreground;
+    @apply mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground;
   }
 
   /* Card variants */
@@ -219,19 +230,47 @@
     background: var(--gradient-card);
   }
 
-  /* Form styles */
+  /* Form styles - Responsive */
   .form-section {
-    @apply rounded-xl border bg-card p-6;
+    @apply rounded-xl border bg-card p-4 sm:p-6;
     box-shadow: var(--shadow-sm);
   }
 
   .form-section-title {
-    @apply mb-4 text-lg font-semibold text-foreground;
+    @apply mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-foreground;
   }
 
   /* Sidebar active state */
   .sidebar-item-active {
     @apply bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+
+  /* Mobile touch-friendly buttons */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Responsive filter container */
+  .filter-container {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4;
+  }
+
+  /* Mobile-first grid utilities */
+  .responsive-grid-2 {
+    @apply grid grid-cols-1 gap-3 xs:grid-cols-2 sm:gap-4;
+  }
+
+  .responsive-grid-3 {
+    @apply grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3 sm:gap-4;
+  }
+
+  .responsive-grid-4 {
+    @apply grid grid-cols-1 gap-3 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 sm:gap-4;
+  }
+
+  /* Scrollable horizontal on mobile */
+  .scroll-x-mobile {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
   }
 
   /* Animation utilities */
@@ -261,5 +300,25 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+/* Custom scrollbar for mobile-friendly horizontal scroll */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area padding for mobile devices */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
   }
 }

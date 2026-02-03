@@ -44,7 +44,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen">
       {/* Left side - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-between bg-sidebar p-12">
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-between bg-sidebar p-8 xl:p-12">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
@@ -54,20 +54,20 @@ export default function Login() {
           </span>
         </div>
 
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold leading-tight text-sidebar-primary xl:text-5xl">
+        <div className="space-y-4 xl:space-y-6">
+          <h1 className="text-3xl xl:text-4xl 2xl:text-5xl font-bold leading-tight text-sidebar-primary">
             Complete School
             <br />
             Management System
           </h1>
-          <p className="max-w-lg text-lg text-sidebar-foreground">
+          <p className="max-w-lg text-base xl:text-lg text-sidebar-foreground">
             Digitize your entire school operations with our comprehensive
             management solution. From admissions to academics, fees to
             communication.
           </p>
 
           {/* Feature highlights */}
-          <div className="grid gap-4 pt-8 sm:grid-cols-2">
+          <div className="grid gap-3 xl:gap-4 pt-4 xl:pt-8 grid-cols-2">
             {[
               { label: "Student Management", value: "5000+" },
               { label: "Staff Records", value: "250+" },
@@ -76,12 +76,12 @@ export default function Login() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-4"
+                className="rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-3 xl:p-4"
               >
-                <p className="text-2xl font-bold text-sidebar-primary">
+                <p className="text-xl xl:text-2xl font-bold text-sidebar-primary">
                   {stat.value}
                 </p>
-                <p className="text-sm text-sidebar-muted">{stat.label}</p>
+                <p className="text-xs xl:text-sm text-sidebar-muted">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -93,28 +93,28 @@ export default function Login() {
       </div>
 
       {/* Right side - Login form */}
-      <div className="flex w-full items-center justify-center bg-background px-4 lg:w-1/2 xl:w-[45%]">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex w-full items-center justify-center bg-background px-4 py-8 sm:px-6 lg:w-1/2 xl:w-[45%]">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Mobile logo */}
           <div className="flex items-center justify-center gap-3 lg:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-7 w-7 text-primary-foreground" />
+            <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary">
+              <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-xl sm:text-2xl font-bold text-foreground">
               EduTrack Pro
             </span>
           </div>
 
-          <div className="space-y-2 text-center lg:text-left">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="space-y-1 sm:space-y-2 text-center lg:text-left">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Welcome back
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Sign in to your account to continue
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {/* School Code */}
             <div className="space-y-2">
               <Label htmlFor="schoolCode">School Code</Label>

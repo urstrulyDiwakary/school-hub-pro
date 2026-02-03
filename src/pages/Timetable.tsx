@@ -178,26 +178,27 @@ export default function Timetable() {
 
       {/* Timetable */}
       <Card className="stat-card overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-2 px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Class {selectedClass}-{selectedSection} Weekly Schedule
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="sticky left-0 z-10 min-w-[100px] border-b bg-muted/50 p-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="sticky left-0 z-10 min-w-[80px] sm:min-w-[100px] border-b bg-muted/50 p-2 sm:p-3 text-left text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Time / Day
                   </th>
                   {days.map((day) => (
                     <th
                       key={day}
-                      className="min-w-[140px] border-b p-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                      className="min-w-[100px] sm:min-w-[140px] border-b p-2 sm:p-3 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
-                      {day}
+                      <span className="hidden sm:inline">{day}</span>
+                      <span className="sm:hidden">{day.slice(0, 3)}</span>
                     </th>
                   ))}
                 </tr>
@@ -205,17 +206,17 @@ export default function Timetable() {
               <tbody>
                 {periods.map((period, index) => (
                   <tr key={index} className={period.isBreak ? "bg-muted/30" : ""}>
-                    <td className="sticky left-0 z-10 border-b bg-card p-3">
-                      <div className="text-xs font-medium text-foreground">
-                        {period.isBreak ? period.period : `Period ${period.period}`}
+                    <td className="sticky left-0 z-10 border-b bg-card p-2 sm:p-3">
+                      <div className="text-[10px] sm:text-xs font-medium text-foreground">
+                        {period.isBreak ? period.period : `P${period.period}`}
                       </div>
-                      <div className="text-xs text-muted-foreground">{period.time}</div>
+                      <div className="text-[9px] sm:text-xs text-muted-foreground">{period.time}</div>
                     </td>
                     {days.map((day) => (
-                      <td key={day} className="border-b p-2 text-center">
+                      <td key={day} className="border-b p-1 sm:p-2 text-center">
                         {period.isBreak ? (
                           <div className="flex items-center justify-center">
-                            <span className="rounded-lg bg-muted px-4 py-2 text-xs font-medium text-muted-foreground">
+                            <span className="rounded-lg bg-muted px-2 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium text-muted-foreground">
                               {period.period}
                             </span>
                           </div>
@@ -232,12 +233,12 @@ export default function Timetable() {
                             return (
                               <div
                                 className={cn(
-                                  "rounded-lg border p-2 transition-all hover:shadow-sm",
+                                  "rounded-lg border p-1.5 sm:p-2 transition-all hover:shadow-sm",
                                   subjectColors[data.subject] || "bg-muted text-muted-foreground"
                                 )}
                               >
-                                <p className="text-xs font-semibold">{data.subject}</p>
-                                <p className="mt-0.5 text-[10px] opacity-80">{data.teacher}</p>
+                                <p className="text-[10px] sm:text-xs font-semibold">{data.subject}</p>
+                                <p className="mt-0.5 text-[8px] sm:text-[10px] opacity-80">{data.teacher}</p>
                               </div>
                             );
                           })()

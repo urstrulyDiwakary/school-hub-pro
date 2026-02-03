@@ -279,40 +279,45 @@ export default function Communication() {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="announcements">Announcements</TabsTrigger>
-            <TabsTrigger value="notices">Notices</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+            <TabsList className="inline-flex w-auto">
+              <TabsTrigger value="all" className="text-xs sm:text-sm px-3 sm:px-4">All</TabsTrigger>
+              <TabsTrigger value="announcements" className="text-xs sm:text-sm px-3 sm:px-4">
+                <span className="hidden xs:inline">Announcements</span>
+                <span className="xs:hidden">Announce</span>
+              </TabsTrigger>
+              <TabsTrigger value="notices" className="text-xs sm:text-sm px-3 sm:px-4">Notices</TabsTrigger>
+              <TabsTrigger value="alerts" className="text-xs sm:text-sm px-3 sm:px-4">Alerts</TabsTrigger>
+            </TabsList>
+          </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Search..." className="pl-9" />
           </div>
         </div>
 
-        <TabsContent value="all" className="space-y-4">
+        <TabsContent value="all" className="space-y-3 sm:space-y-4">
           {announcements.map((item) => {
             const TypeIcon = getTypeIcon(item.type);
             return (
               <Card key={item.id} className="stat-card">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className={cn("stat-card-icon", getTypeColor(item.type))}>
-                        <TypeIcon className="h-5 w-5" />
+                <CardContent className="p-3 sm:p-5">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className={cn("stat-card-icon flex-shrink-0", getTypeColor(item.type))}>
+                        <TypeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">
                             {item.title}
                           </h3>
                           {item.status === "draft" && (
                             <span className="badge-pending">Draft</span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                           {item.content}
                         </p>
                         <div className="flex flex-wrap items-center gap-3 pt-2">
