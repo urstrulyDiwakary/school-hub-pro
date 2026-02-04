@@ -353,10 +353,12 @@ export default function Students() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="gap-2">
-                            <Eye className="h-4 w-4" />
-                            View Profile
-                          </DropdownMenuItem>
+                          <Link to={`/students/${student.id}`}>
+                            <DropdownMenuItem className="gap-2">
+                              <Eye className="h-4 w-4" />
+                              View Profile
+                            </DropdownMenuItem>
+                          </Link>
                           <DropdownMenuItem className="gap-2">
                             <Pencil className="h-4 w-4" />
                             Edit
