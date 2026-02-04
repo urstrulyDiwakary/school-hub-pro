@@ -17,6 +17,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  CreditCard,
+  IndianRupee,
+  Receipt,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,6 +139,29 @@ const documentsData = [
   { id: "4", name: "Medical Certificate", type: "PDF", size: "150 KB", uploadedOn: "2024-06-10", status: "pending" },
   { id: "5", name: "Address Proof", type: "PDF", size: "210 KB", uploadedOn: "2020-04-15", status: "verified" },
 ];
+
+const feesData = {
+  summary: {
+    totalFee: 85000,
+    paid: 65000,
+    pending: 20000,
+    discount: 5000,
+    dueDate: "2024-12-31",
+  },
+  feeBreakdown: [
+    { category: "Tuition Fee", amount: 45000, paid: 45000, status: "paid" },
+    { category: "Admission Fee", amount: 15000, paid: 15000, status: "paid" },
+    { category: "Lab Fee", amount: 8000, paid: 5000, status: "partial" },
+    { category: "Library Fee", amount: 5000, paid: 0, status: "unpaid" },
+    { category: "Sports Fee", amount: 7000, paid: 0, status: "unpaid" },
+    { category: "Computer Fee", amount: 5000, paid: 0, status: "unpaid" },
+  ],
+  paymentHistory: [
+    { id: "PAY001", date: "2024-04-15", amount: 30000, mode: "Online", reference: "TXN2024041500123", status: "success" },
+    { id: "PAY002", date: "2024-07-20", amount: 20000, mode: "Cheque", reference: "CHQ123456", status: "success" },
+    { id: "PAY003", date: "2024-10-05", amount: 15000, mode: "Cash", reference: "RCP2024100500456", status: "success" },
+  ],
+};
 
 export default function StudentProfile() {
   const { id } = useParams();
@@ -265,6 +292,9 @@ export default function StudentProfile() {
             </TabsTrigger>
             <TabsTrigger value="marks" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
               Marks
+            </TabsTrigger>
+            <TabsTrigger value="fees" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
+              Fees
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
               Documents
@@ -602,6 +632,187 @@ export default function StudentProfile() {
               </CardContent>
             </Card>
           ))}
+        </TabsContent>
+
+        {/* Fees Tab */}
+        <TabsContent value="fees" className="space-y-4 sm:space-y-6">
+          {/* Fee Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Fee</p>
+                    <p className="text-lg sm:text-xl font-bold">₹{feesData.summary.totalFee.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Paid</p>
+                    <p className="text-lg sm:text-xl font-bold text-success">₹{feesData.summary.paid.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pending</p>
+                    <p className="text-lg sm:text-xl font-bold text-destructive">₹{feesData.summary.pending.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Due Date</p>
+                    <p className="text-sm sm:text-base font-bold text-warning">
+                      {new Date(feesData.summary.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Progress */}
+          <Card className="stat-card">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <CardTitle className="text-base sm:text-lg">Payment Progress</CardTitle>
+                <Button size="sm" className="w-full sm:w-auto gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Pay Now
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    ₹{feesData.summary.paid.toLocaleString("en-IN")} of ₹{feesData.summary.totalFee.toLocaleString("en-IN")}
+                  </span>
+                  <span className="font-bold text-primary">
+                    {Math.round((feesData.summary.paid / feesData.summary.totalFee) * 100)}%
+                  </span>
+                </div>
+                <Progress value={(feesData.summary.paid / feesData.summary.totalFee) * 100} className="h-3" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fee Breakdown */}
+          <Card className="stat-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Fee Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th className="text-right">Amount</th>
+                      <th className="text-right">Paid</th>
+                      <th className="text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feesData.feeBreakdown.map((fee, index) => (
+                      <tr key={index}>
+                        <td className="font-medium">{fee.category}</td>
+                        <td className="text-right">₹{fee.amount.toLocaleString("en-IN")}</td>
+                        <td className="text-right text-success">₹{fee.paid.toLocaleString("en-IN")}</td>
+                        <td className="text-center">
+                          <Badge
+                            variant="outline"
+                            className={
+                              fee.status === "paid"
+                                ? "bg-success/10 text-success border-success/20"
+                                : fee.status === "partial"
+                                ? "bg-warning/10 text-warning border-warning/20"
+                                : "bg-destructive/10 text-destructive border-destructive/20"
+                            }
+                          >
+                            {fee.status.charAt(0).toUpperCase() + fee.status.slice(1)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-muted/50 font-semibold">
+                      <td>Total</td>
+                      <td className="text-right">₹{feesData.summary.totalFee.toLocaleString("en-IN")}</td>
+                      <td className="text-right text-success">₹{feesData.summary.paid.toLocaleString("en-IN")}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment History */}
+          <Card className="stat-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Payment History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {feesData.paymentHistory.map((payment) => (
+                  <div
+                    key={payment.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-success/10">
+                        <Receipt className="h-5 w-5 text-success" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">₹{payment.amount.toLocaleString("en-IN")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {payment.mode} • {payment.reference}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 ml-11 sm:ml-0">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {new Date(payment.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                          Success
+                        </Badge>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Documents Tab */}
