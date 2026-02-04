@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import AddStudent from "./pages/AddStudent";
+import StudentProfile from "./pages/StudentProfile";
 import Teachers from "./pages/Teachers";
 import AddTeacher from "./pages/AddTeacher";
 import Staff from "./pages/Staff";
@@ -44,6 +45,7 @@ const App = () => (
             {/* Students */}
             <Route path="/students" element={<Students />} />
             <Route path="/students/add" element={<AddStudent />} />
+            <Route path="/students/:id" element={<StudentProfile />} />
             <Route path="/students/attendance" element={<Attendance />} />
             
             {/* Teachers */}
