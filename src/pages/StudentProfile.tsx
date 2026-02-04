@@ -21,6 +21,9 @@ import {
   IndianRupee,
   Receipt,
   AlertTriangle,
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,6 +166,78 @@ const feesData = {
   ],
 };
 
+const remarksData = {
+  summary: {
+    totalRemarks: 12,
+    academic: 7,
+    behavioral: 5,
+    positive: 9,
+    negative: 3,
+  },
+  remarks: [
+    {
+      id: "1",
+      type: "academic",
+      sentiment: "positive",
+      subject: "Mathematics",
+      teacher: "Dr. Ramesh Kumar",
+      date: "2024-11-10",
+      title: "Excellent problem-solving skills",
+      description: "Arjun has shown remarkable improvement in solving complex algebraic equations. He actively participates in class discussions and helps fellow students understand difficult concepts.",
+    },
+    {
+      id: "2",
+      type: "behavioral",
+      sentiment: "positive",
+      subject: null,
+      teacher: "Mrs. Priya Sharma",
+      date: "2024-11-05",
+      title: "Leadership qualities",
+      description: "Demonstrated excellent leadership during the group project. Coordinated well with team members and ensured everyone contributed equally.",
+    },
+    {
+      id: "3",
+      type: "academic",
+      sentiment: "negative",
+      subject: "English",
+      teacher: "Mr. Suresh Patel",
+      date: "2024-10-28",
+      title: "Needs improvement in essay writing",
+      description: "Essays lack proper structure and coherence. Recommended to practice more creative writing and focus on grammar rules.",
+    },
+    {
+      id: "4",
+      type: "behavioral",
+      sentiment: "positive",
+      subject: null,
+      teacher: "Mrs. Anita Verma",
+      date: "2024-10-20",
+      title: "Helpful and respectful",
+      description: "Always willing to help classmates and shows respect towards teachers and staff. Sets a good example for others.",
+    },
+    {
+      id: "5",
+      type: "academic",
+      sentiment: "positive",
+      subject: "Science",
+      teacher: "Dr. Kavita Singh",
+      date: "2024-10-15",
+      title: "Outstanding lab performance",
+      description: "Conducted all experiments with precision and maintained excellent lab notes. Shows genuine interest in scientific research.",
+    },
+    {
+      id: "6",
+      type: "behavioral",
+      sentiment: "negative",
+      subject: null,
+      teacher: "Mr. Vikram Rao",
+      date: "2024-09-25",
+      title: "Occasional tardiness",
+      description: "Has been late to morning assembly a few times. Needs to improve punctuality.",
+    },
+  ],
+};
+
 export default function StudentProfile() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
@@ -295,6 +370,9 @@ export default function StudentProfile() {
             </TabsTrigger>
             <TabsTrigger value="fees" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
               Fees
+            </TabsTrigger>
+            <TabsTrigger value="remarks" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
+              Remarks
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4">
               Documents
@@ -810,6 +888,156 @@ export default function StudentProfile() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Remarks Tab */}
+        <TabsContent value="remarks" className="space-y-4 sm:space-y-6">
+          {/* Remarks Summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Remarks</p>
+                    <p className="text-lg sm:text-xl font-bold">{remarksData.summary.totalRemarks}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <ThumbsUp className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Positive</p>
+                    <p className="text-lg sm:text-xl font-bold text-success">{remarksData.summary.positive}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10">
+                    <ThumbsDown className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Needs Work</p>
+                    <p className="text-lg sm:text-xl font-bold text-destructive">{remarksData.summary.negative}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Academic</p>
+                    <p className="text-lg sm:text-xl font-bold text-warning">{remarksData.summary.academic}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Academic Remarks */}
+          <Card className="stat-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Academic Remarks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {remarksData.remarks
+                  .filter((r) => r.type === "academic")
+                  .map((remark) => (
+                    <div
+                      key={remark.id}
+                      className={`p-3 sm:p-4 border rounded-lg ${
+                        remark.sentiment === "positive"
+                          ? "border-success/30 bg-success/5"
+                          : "border-destructive/30 bg-destructive/5"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          {remark.sentiment === "positive" ? (
+                            <ThumbsUp className="h-4 w-4 text-success" />
+                          ) : (
+                            <ThumbsDown className="h-4 w-4 text-destructive" />
+                          )}
+                          <h4 className="font-medium text-sm">{remark.title}</h4>
+                        </div>
+                        <div className="flex items-center gap-2 ml-6 sm:ml-0">
+                          {remark.subject && (
+                            <Badge variant="outline" className="text-xs">
+                              {remark.subject}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(remark.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-6">{remark.description}</p>
+                      <p className="text-xs text-muted-foreground mt-2 ml-6">— {remark.teacher}</p>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Behavioral Remarks */}
+          <Card className="stat-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Behavioral Remarks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {remarksData.remarks
+                  .filter((r) => r.type === "behavioral")
+                  .map((remark) => (
+                    <div
+                      key={remark.id}
+                      className={`p-3 sm:p-4 border rounded-lg ${
+                        remark.sentiment === "positive"
+                          ? "border-success/30 bg-success/5"
+                          : "border-destructive/30 bg-destructive/5"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          {remark.sentiment === "positive" ? (
+                            <ThumbsUp className="h-4 w-4 text-success" />
+                          ) : (
+                            <ThumbsDown className="h-4 w-4 text-destructive" />
+                          )}
+                          <h4 className="font-medium text-sm">{remark.title}</h4>
+                        </div>
+                        <span className="text-xs text-muted-foreground ml-6 sm:ml-0">
+                          {new Date(remark.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-6">{remark.description}</p>
+                      <p className="text-xs text-muted-foreground mt-2 ml-6">— {remark.teacher}</p>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>
