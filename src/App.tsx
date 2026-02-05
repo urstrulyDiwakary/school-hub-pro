@@ -16,6 +16,10 @@ import AddStaff from "./pages/AddStaff";
 import Fees from "./pages/Fees";
 import FeeStructure from "./pages/FeeStructure";
 import Payroll from "./pages/Payroll";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherHomework from "./pages/TeacherHomework";
+import TeacherMarks from "./pages/TeacherMarks";
+import TeacherRemarks from "./pages/TeacherRemarks";
 import Classes from "./pages/Classes";
 import Subjects from "./pages/Subjects";
 import Timetable from "./pages/Timetable";
@@ -81,6 +85,14 @@ const App = () => (
             
             {/* Settings */}
             <Route path="/settings" element={<Settings />} />
+            
+            {/* Teacher Panel */}
+            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/homework" element={<TeacherHomework />} />
+            <Route path="/teacher/marks" element={<TeacherMarks />} />
+            <Route path="/teacher/remarks" element={<TeacherRemarks />} />
+            <Route path="/teacher/attendance" element={<Attendance />} />
           </Route>
           
           {/* Catch-all */}
