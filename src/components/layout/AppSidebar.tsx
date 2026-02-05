@@ -17,6 +17,9 @@ import {
   LogOut,
   Menu,
   X,
+  ClipboardCheck,
+  FileText,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,8 +38,19 @@ const navItems: NavItem[] = [
     href: "/dashboard",
   },
   {
-    title: "Students",
+    title: "Teacher Panel",
     icon: GraduationCap,
+    children: [
+      { title: "My Dashboard", href: "/teacher" },
+      { title: "Homework", href: "/teacher/homework" },
+      { title: "Marks Entry", href: "/teacher/marks" },
+      { title: "Student Remarks", href: "/teacher/remarks" },
+      { title: "Attendance", href: "/teacher/attendance" },
+    ],
+  },
+  {
+    title: "Students",
+    icon: Users,
     children: [
       { title: "All Students", href: "/students" },
       { title: "Add Student", href: "/students/add" },
@@ -45,7 +59,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Teachers",
-    icon: Users,
+    icon: GraduationCap,
     children: [
       { title: "All Teachers", href: "/teachers" },
       { title: "Add Teacher", href: "/teachers/add" },
