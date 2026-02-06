@@ -20,6 +20,7 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherHomework from "./pages/TeacherHomework";
 import TeacherMarks from "./pages/TeacherMarks";
 import TeacherRemarks from "./pages/TeacherRemarks";
+import TeacherAttendance from "./pages/TeacherAttendance";
 import Classes from "./pages/Classes";
 import Subjects from "./pages/Subjects";
 import Timetable from "./pages/Timetable";
@@ -92,7 +93,7 @@ const App = () => (
             <Route path="/teacher/homework" element={<TeacherHomework />} />
             <Route path="/teacher/marks" element={<TeacherMarks />} />
             <Route path="/teacher/remarks" element={<TeacherRemarks />} />
-            <Route path="/teacher/attendance" element={<Attendance />} />
+            <Route path="/teacher/attendance" element={<TeacherAttendance />} />
           </Route>
           
           {/* Catch-all */}
