@@ -19,29 +19,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const classStudents = [
-  { id: "1", name: "Arjun Sharma", rollNo: "01" },
-  { id: "2", name: "Priya Patel", rollNo: "02" },
-  { id: "3", name: "Rahul Kumar", rollNo: "03" },
-  { id: "4", name: "Sneha Reddy", rollNo: "04" },
-  { id: "5", name: "Amit Singh", rollNo: "05" },
-  { id: "6", name: "Kavya Nair", rollNo: "06" },
-  { id: "7", name: "Rohan Gupta", rollNo: "07" },
-  { id: "8", name: "Ananya Verma", rollNo: "08" },
-  { id: "9", name: "Vikram Reddy", rollNo: "09" },
-  { id: "10", name: "Meera Iyer", rollNo: "10" },
-  { id: "11", name: "Aditya Joshi", rollNo: "11" },
-  { id: "12", name: "Shreya Das", rollNo: "12" },
-];
-
-const assignedClasses = [
-  { id: "1", name: "Class 10-A", subject: "Mathematics" },
-  { id: "2", name: "Class 10-B", subject: "Mathematics" },
-  { id: "3", name: "Class 9-A", subject: "Mathematics" },
-];
-
-type AttendanceStatus = "present" | "absent" | "late" | "unmarked";
+import { classStudents, assignedClasses } from "@/data/teacherData";
+import type { AttendanceStatus } from "@/data/teacherData";
+import { notifyAbsentStudent, dispatchPendingNotifications } from "@/utils/notificationService";
 
 export default function TeacherAttendance() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -53,44 +33,30 @@ export default function TeacherAttendance() {
     }, {} as Record<string, AttendanceStatus>)
   );
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
   const toggleAttendance = (studentId: string, status: AttendanceStatus) => {
-    setAttendance((prev) => ({
-      ...prev,
-      [studentId]: status,
-    }));
+    setAttendance((prev) => ({ ...prev, [studentId]: status }));
   };
 
   const markAllPresent = () => {
     const newAttendance: Record<string, AttendanceStatus> = {};
-    classStudents.forEach((s) => {
-      newAttendance[s.id] = "present";
-    });
+    classStudents.forEach((s) => { newAttendance[s.id] = "present"; });
     setAttendance(newAttendance);
     toast.success("All students marked present");
   };
 
   const markAllAbsent = () => {
     const newAttendance: Record<string, AttendanceStatus> = {};
-    classStudents.forEach((s) => {
-      newAttendance[s.id] = "absent";
-    });
+    classStudents.forEach((s) => { newAttendance[s.id] = "absent"; });
     setAttendance(newAttendance);
     toast.success("All students marked absent");
   };
 
   const resetAttendance = () => {
     const newAttendance: Record<string, AttendanceStatus> = {};
-    classStudents.forEach((s) => {
-      newAttendance[s.id] = "unmarked";
-    });
+    classStudents.forEach((s) => { newAttendance[s.id] = "unmarked"; });
     setAttendance(newAttendance);
     toast.info("Attendance reset");
   };
@@ -101,7 +67,32 @@ export default function TeacherAttendance() {
       toast.warning(`${unmarkedCount} student(s) still unmarked`);
       return;
     }
-    toast.success("Attendance saved successfully");
+
+    // Queue absence notifications for parents
+    const selectedClassInfo = assignedClasses.find((c) => c.id === selectedClass);
+    const className = selectedClassInfo?.name || "Unknown Class";
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+
+    classStudents.forEach((student) => {
+      if (attendance[student.id] === "absent") {
+        notifyAbsentStudent({
+          studentId: student.id,
+          studentName: student.name,
+          className,
+          date: dateStr,
+        });
+      }
+    });
+
+    const notificationCount = dispatchPendingNotifications();
+    
+    if (notificationCount > 0) {
+      toast.success(
+        `Attendance saved. ${notificationCount} absence alert(s) queued for parents.`
+      );
+    } else {
+      toast.success("Attendance saved successfully");
+    }
   };
 
   const presentCount = Object.values(attendance).filter((s) => s === "present").length;
