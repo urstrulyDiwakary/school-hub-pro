@@ -46,6 +46,8 @@ const navItems: NavItem[] = [
       { title: "Marks Entry", href: "/teacher/marks" },
       { title: "Student Remarks", href: "/teacher/remarks" },
       { title: "Attendance", href: "/teacher/attendance" },
+      { title: "Attendance History", href: "/teacher/attendance/history" },
+      { title: "My Payslip", href: "/teacher/payslip" },
     ],
   },
   {

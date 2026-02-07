@@ -21,6 +21,8 @@ import TeacherHomework from "./pages/TeacherHomework";
 import TeacherMarks from "./pages/TeacherMarks";
 import TeacherRemarks from "./pages/TeacherRemarks";
 import TeacherAttendance from "./pages/TeacherAttendance";
+import TeacherAttendanceHistory from "./pages/TeacherAttendanceHistory";
+import TeacherPayslip from "./pages/TeacherPayslip";
 import Classes from "./pages/Classes";
 import Subjects from "./pages/Subjects";
 import Timetable from "./pages/Timetable";
@@ -94,6 +96,8 @@ const App = () => (
             <Route path="/teacher/marks" element={<TeacherMarks />} />
             <Route path="/teacher/remarks" element={<TeacherRemarks />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+            <Route path="/teacher/attendance/history" element={<TeacherAttendanceHistory />} />
+            <Route path="/teacher/payslip" element={<TeacherPayslip />} />
           </Route>
           
           {/* Catch-all */}
