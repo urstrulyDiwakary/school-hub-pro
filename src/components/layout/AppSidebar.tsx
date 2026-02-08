@@ -157,7 +157,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full w-64 flex-col bg-sidebar transition-transform duration-300 lg:relative lg:translate-x-0",
+          "fixed left-0 top-0 z-50 flex h-screen w-64 flex-col bg-sidebar transition-transform duration-300 lg:sticky lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
