@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { assignedClasses, attendanceHistory } from "@/data/teacherData";
 import type { AttendanceStatus } from "@/data/teacherData";
+import StudentAttendanceSummary from "@/components/teacher/StudentAttendanceSummary";
 
 export default function TeacherAttendanceHistory() {
   const [selectedClass, setSelectedClass] = useState("1");
@@ -275,6 +276,9 @@ export default function TeacherAttendanceHistory() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Student-wise Summary */}
+      <StudentAttendanceSummary filteredRecords={filteredRecords} />
 
       {/* Records */}
       {filteredRecords.length === 0 ? (
