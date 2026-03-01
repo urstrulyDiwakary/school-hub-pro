@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import { CheckCircle2, AlertTriangle, XCircle, TrendingUp } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, ArrowUpDown, Hash, User, BarChart3 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,11 @@ interface StudentStat {
   rate: number;
 }
 
+type SortField = "rollNo" | "name" | "rate";
+
 export default function StudentAttendanceSummary({ filteredRecords }: StudentAttendanceSummaryProps) {
+  const [sortBy, setSortBy] = useState<SortField>("rollNo");
+
   const studentStats = useMemo(() => {
     const map = new Map<string, StudentStat>();
 
@@ -52,8 +57,15 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
       rate: s.totalDays > 0 ? Math.round((s.present / s.totalDays) * 100) : 0,
     }));
 
-    return stats.sort((a, b) => a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true }));
-  }, [filteredRecords]);
+    switch (sortBy) {
+      case "name":
+        return stats.sort((a, b) => a.studentName.localeCompare(b.studentName));
+      case "rate":
+        return stats.sort((a, b) => a.rate - b.rate);
+      default:
+        return stats.sort((a, b) => a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true }));
+    }
+  }, [filteredRecords, sortBy]);
 
   if (filteredRecords.length === 0 || studentStats.length === 0) return null;
 
@@ -88,13 +100,32 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
             <TrendingUp className="h-4 w-4 text-primary" />
             Student-wise Attendance Summary
           </CardTitle>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <span>Avg: <strong className={getStatusColor(avgRate)}>{avgRate}%</strong></span>
-            {belowThreshold > 0 && (
-              <span className="text-destructive font-medium">
-                {belowThreshold} below 75%
-              </span>
-            )}
+          <div className="flex items-center gap-4">
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span>Avg: <strong className={getStatusColor(avgRate)}>{avgRate}%</strong></span>
+              {belowThreshold > 0 && (
+                <span className="text-destructive font-medium">
+                  {belowThreshold} below 75%
+                </span>
+              )}
+            </div>
+            <ToggleGroup
+              type="single"
+              value={sortBy}
+              onValueChange={(v) => v && setSortBy(v as SortField)}
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem value="rollNo" aria-label="Sort by roll number">
+                <Hash className="h-3.5 w-3.5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="name" aria-label="Sort by name">
+                <User className="h-3.5 w-3.5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="rate" aria-label="Sort by attendance rate">
+                <BarChart3 className="h-3.5 w-3.5" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
         </div>
       </CardHeader>
