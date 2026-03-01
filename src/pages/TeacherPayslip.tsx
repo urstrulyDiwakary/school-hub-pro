@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import YtdSalarySummary from "@/components/teacher/YtdSalarySummary";
 import TaxComputationBreakdown from "@/components/teacher/TaxComputationBreakdown";
+import MonthlySalaryTrendChart from "@/components/teacher/MonthlySalaryTrendChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -427,6 +428,9 @@ export default function TeacherPayslip() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Salary Trend */}
+      <MonthlySalaryTrendChart />
 
       {/* YTD Summary & Tax Breakdown */}
       <YtdSalarySummary />
