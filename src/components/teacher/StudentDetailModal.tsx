@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from "date-fns";
-import { CheckCircle2, XCircle, Clock, CalendarDays, X } from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
+import { CheckCircle2, XCircle, Clock, CalendarDays, Flame, Trophy } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,8 +51,8 @@ export default function StudentDetailModal({
     return Array.from(monthSet).sort();
   }, [filteredRecords]);
 
-  // Stats
-  const stats = useMemo(() => {
+  // Stats & streaks
+  const { stats, longestStreak, currentStreak } = useMemo(() => {
     let present = 0, absent = 0, late = 0, total = 0;
     dailyStatus.forEach((status) => {
       total++;
@@ -61,7 +61,26 @@ export default function StudentDetailModal({
       if (status === "late") late++;
     });
     const rate = total > 0 ? Math.round((present / total) * 100) : 0;
-    return { present, absent, late, total, rate };
+
+    // Compute streaks from sorted dates
+    const sortedDates = Array.from(dailyStatus.keys()).sort();
+    let longest = 0, current = 0, streak = 0;
+    for (const dateKey of sortedDates) {
+      if (dailyStatus.get(dateKey) === "present") {
+        streak++;
+        if (streak > longest) longest = streak;
+      } else {
+        streak = 0;
+      }
+    }
+    // Current streak = streak at the end of sorted dates
+    current = streak;
+
+    return {
+      stats: { present, absent, late, total, rate },
+      longestStreak: longest,
+      currentStreak: current,
+    };
   }, [dailyStatus]);
 
   const getStatusColor = (status: AttendanceStatus | undefined) => {
@@ -116,6 +135,28 @@ export default function StudentDetailModal({
           <div className="flex flex-col items-center rounded-lg border border-warning/20 bg-warning/5 p-2.5">
             <span className="text-lg font-bold text-warning">{stats.late}</span>
             <span className="text-[10px] text-muted-foreground">Late</span>
+          </div>
+        </div>
+
+        {/* Streak Indicators */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3 bg-muted/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <Flame className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-lg font-bold text-foreground">{currentStreak} <span className="text-xs font-normal text-muted-foreground">days</span></div>
+              <div className="text-[10px] text-muted-foreground">Current Streak</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3 bg-muted/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
+              <Trophy className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <div className="text-lg font-bold text-foreground">{longestStreak} <span className="text-xs font-normal text-muted-foreground">days</span></div>
+              <div className="text-[10px] text-muted-foreground">Best Streak</div>
+            </div>
           </div>
         </div>
 
