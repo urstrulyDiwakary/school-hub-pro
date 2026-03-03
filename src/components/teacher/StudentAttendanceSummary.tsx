@@ -20,6 +20,8 @@ interface StudentStat {
   absent: number;
   late: number;
   rate: number;
+  /** daily scores sorted by date: 1=present, 0.5=late, 0=absent */
+  dailyScores: number[];
 }
 
 type SortField = "rollNo" | "name" | "rate";
@@ -28,16 +30,19 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
   const [sortBy, setSortBy] = useState<SortField>("rollNo");
   const [selectedStudent, setSelectedStudent] = useState<StudentStat | null>(null);
   const studentStats = useMemo(() => {
+    const sorted = [...filteredRecords].sort((a, b) => a.date.localeCompare(b.date));
     const map = new Map<string, StudentStat>();
 
-    filteredRecords.forEach((record) => {
+    sorted.forEach((record) => {
       record.records.forEach((r) => {
+        const score = r.status === "present" ? 1 : r.status === "late" ? 0.5 : 0;
         const existing = map.get(r.studentId);
         if (existing) {
           existing.totalDays++;
           if (r.status === "present") existing.present++;
           if (r.status === "absent") existing.absent++;
           if (r.status === "late") existing.late++;
+          existing.dailyScores.push(score);
         } else {
           map.set(r.studentId, {
             studentId: r.studentId,
@@ -48,6 +53,7 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
             absent: r.status === "absent" ? 1 : 0,
             late: r.status === "late" ? 1 : 0,
             rate: 0,
+            dailyScores: [score],
           });
         }
       });
@@ -86,6 +92,22 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
     if (rate >= 90) return <CheckCircle2 className="h-4 w-4 text-success" />;
     if (rate >= 75) return <AlertTriangle className="h-4 w-4 text-warning" />;
     return <XCircle className="h-4 w-4 text-destructive" />;
+  };
+
+  const Sparkline = ({ scores, rate }: { scores: number[]; rate: number }) => {
+    if (scores.length < 2) return null;
+    const w = 60, h = 20, padding = 2;
+    const stepX = (w - padding * 2) / (scores.length - 1);
+    const points = scores.map((s, i) => `${padding + i * stepX},${padding + (1 - s) * (h - padding * 2)}`).join(" ");
+    const color = rate >= 90 ? "hsl(var(--success))" : rate >= 75 ? "hsl(var(--warning))" : "hsl(var(--destructive))";
+    return (
+      <svg width={w} height={h} className="shrink-0 hidden md:block">
+        <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {scores.map((s, i) => (
+          <circle key={i} cx={padding + i * stepX} cy={padding + (1 - s) * (h - padding * 2)} r="2" fill={s === 1 ? "hsl(var(--success))" : s === 0.5 ? "hsl(var(--warning))" : "hsl(var(--destructive))"} />
+        ))}
+      </svg>
+    );
   };
 
   const avgRate = studentStats.length > 0
@@ -155,6 +177,9 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
                   className={cn("h-2.5 bg-muted", getProgressColor(student.rate))}
                 />
               </div>
+
+              {/* Sparkline */}
+              <Sparkline scores={student.dailyScores} rate={student.rate} />
 
               {/* Stats */}
               <div className="flex items-center gap-3 shrink-0">
