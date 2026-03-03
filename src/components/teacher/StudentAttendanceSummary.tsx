@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { AttendanceRecord } from "@/data/teacherData";
+import StudentDetailModal from "./StudentDetailModal";
 
 interface StudentAttendanceSummaryProps {
   filteredRecords: AttendanceRecord[];
@@ -25,7 +26,7 @@ type SortField = "rollNo" | "name" | "rate";
 
 export default function StudentAttendanceSummary({ filteredRecords }: StudentAttendanceSummaryProps) {
   const [sortBy, setSortBy] = useState<SortField>("rollNo");
-
+  const [selectedStudent, setSelectedStudent] = useState<StudentStat | null>(null);
   const studentStats = useMemo(() => {
     const map = new Map<string, StudentStat>();
 
@@ -134,7 +135,8 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
           {studentStats.map((student) => (
             <div
               key={student.studentId}
-              className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors hover:bg-muted/30"
+              onClick={() => setSelectedStudent(student)}
+              className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors hover:bg-muted/30 cursor-pointer"
             >
               {/* Roll No & Name */}
               <div className="flex items-center gap-2 min-w-0 w-40 shrink-0">
@@ -188,6 +190,17 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
           </div>
         </div>
       </CardContent>
+
+      {selectedStudent && (
+        <StudentDetailModal
+          open={!!selectedStudent}
+          onOpenChange={(open) => !open && setSelectedStudent(null)}
+          studentId={selectedStudent.studentId}
+          studentName={selectedStudent.studentName}
+          rollNo={selectedStudent.rollNo}
+          filteredRecords={filteredRecords}
+        />
+      )}
     </Card>
   );
 }
