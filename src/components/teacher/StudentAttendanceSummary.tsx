@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, ArrowUpDown, Hash, User, BarChart3 } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, ArrowUpDown, Hash, User, BarChart3, Bell } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { AttendanceRecord } from "@/data/teacherData";
+import { notifyAbsentStudent, dispatchPendingNotifications } from "@/utils/notificationService";
 import StudentDetailModal from "./StudentDetailModal";
 
 interface StudentAttendanceSummaryProps {
@@ -115,15 +118,33 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
     : 0;
   const belowThreshold = studentStats.filter((s) => s.rate < 75).length;
 
+  const handleBulkNotify = () => {
+    const critical = studentStats.filter((s) => s.rate < 75);
+    if (critical.length === 0) {
+      toast.info("All students are above the 75% threshold");
+      return;
+    }
+    critical.forEach((s) => {
+      notifyAbsentStudent({
+        studentId: s.studentId,
+        studentName: s.studentName,
+        className: "Current Class",
+        date: new Date().toISOString().split("T")[0],
+      });
+    });
+    const count = dispatchPendingNotifications();
+    toast.success(`Sent ${count} notification(s) to parents of students below 75% attendance`);
+  };
+
   return (
     <Card className="stat-card">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
             Student-wise Attendance Summary
           </CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex gap-4 text-xs text-muted-foreground">
               <span>Avg: <strong className={getStatusColor(avgRate)}>{avgRate}%</strong></span>
               {belowThreshold > 0 && (
@@ -132,6 +153,12 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
                 </span>
               )}
             </div>
+            {belowThreshold > 0 && (
+              <Button variant="destructive" size="sm" className="gap-1.5 text-xs" onClick={handleBulkNotify}>
+                <Bell className="h-3.5 w-3.5" />
+                Notify Parents ({belowThreshold})
+              </Button>
+            )}
             <ToggleGroup
               type="single"
               value={sortBy}
