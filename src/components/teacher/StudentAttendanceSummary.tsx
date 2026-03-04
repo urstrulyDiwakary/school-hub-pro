@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import type { AttendanceRecord } from "@/data/teacherData";
-import { notifyAbsentStudent, dispatchPendingNotifications } from "@/utils/notificationService";
 import StudentDetailModal from "./StudentDetailModal";
+import NotifyParentsDialog from "./NotifyParentsDialog";
 
 interface StudentAttendanceSummaryProps {
   filteredRecords: AttendanceRecord[];
@@ -32,6 +31,7 @@ type SortField = "rollNo" | "name" | "rate";
 export default function StudentAttendanceSummary({ filteredRecords }: StudentAttendanceSummaryProps) {
   const [sortBy, setSortBy] = useState<SortField>("rollNo");
   const [selectedStudent, setSelectedStudent] = useState<StudentStat | null>(null);
+  const [showNotifyDialog, setShowNotifyDialog] = useState(false);
   const studentStats = useMemo(() => {
     const sorted = [...filteredRecords].sort((a, b) => a.date.localeCompare(b.date));
     const map = new Map<string, StudentStat>();
@@ -118,23 +118,7 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
     : 0;
   const belowThreshold = studentStats.filter((s) => s.rate < 75).length;
 
-  const handleBulkNotify = () => {
-    const critical = studentStats.filter((s) => s.rate < 75);
-    if (critical.length === 0) {
-      toast.info("All students are above the 75% threshold");
-      return;
-    }
-    critical.forEach((s) => {
-      notifyAbsentStudent({
-        studentId: s.studentId,
-        studentName: s.studentName,
-        className: "Current Class",
-        date: new Date().toISOString().split("T")[0],
-      });
-    });
-    const count = dispatchPendingNotifications();
-    toast.success(`Sent ${count} notification(s) to parents of students below 75% attendance`);
-  };
+  const criticalStudents = studentStats.filter((s) => s.rate < 75);
 
   return (
     <Card className="stat-card">
@@ -154,9 +138,9 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
               )}
             </div>
             {belowThreshold > 0 && (
-              <Button variant="destructive" size="sm" className="gap-1.5 text-xs" onClick={handleBulkNotify}>
+              <Button variant="destructive" size="sm" className="gap-1.5 text-xs" onClick={() => setShowNotifyDialog(true)}>
                 <Bell className="h-3.5 w-3.5" />
-                Notify Parents ({belowThreshold})
+                <span className="hidden xs:inline">Notify Parents</span> ({belowThreshold})
               </Button>
             )}
             <ToggleGroup
@@ -185,10 +169,10 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
             <div
               key={student.studentId}
               onClick={() => setSelectedStudent(student)}
-              className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors hover:bg-muted/30 cursor-pointer"
+              className="flex items-center gap-2 sm:gap-3 rounded-lg border border-border/50 p-2 sm:p-3 transition-colors hover:bg-muted/30 cursor-pointer"
             >
               {/* Roll No & Name */}
-              <div className="flex items-center gap-2 min-w-0 w-40 shrink-0">
+              <div className="flex items-center gap-2 min-w-0 w-24 xs:w-32 sm:w-40 shrink-0">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground shrink-0">
                   {student.rollNo}
                 </span>
@@ -198,10 +182,10 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
               </div>
 
               {/* Progress bar */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 hidden xs:block">
                 <Progress
                   value={student.rate}
-                  className={cn("h-2.5 bg-muted", getProgressColor(student.rate))}
+                  className={cn("h-2 sm:h-2.5 bg-muted", getProgressColor(student.rate))}
                 />
               </div>
 
@@ -253,6 +237,12 @@ export default function StudentAttendanceSummary({ filteredRecords }: StudentAtt
           filteredRecords={filteredRecords}
         />
       )}
+
+      <NotifyParentsDialog
+        open={showNotifyDialog}
+        onOpenChange={setShowNotifyDialog}
+        students={criticalStudents}
+      />
     </Card>
   );
 }

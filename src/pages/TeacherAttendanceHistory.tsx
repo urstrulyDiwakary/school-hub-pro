@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { assignedClasses, attendanceHistory } from "@/data/teacherData";
 import type { AttendanceStatus } from "@/data/teacherData";
 import StudentAttendanceSummary from "@/components/teacher/StudentAttendanceSummary";
+import AttendanceTrendChart from "@/components/teacher/AttendanceTrendChart";
 
 export default function TeacherAttendanceHistory() {
   const [selectedClass, setSelectedClass] = useState("1");
@@ -423,6 +424,9 @@ export default function TeacherAttendanceHistory() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Attendance Trend Chart */}
+      <AttendanceTrendChart filteredRecords={filteredRecords} />
 
       {/* Student-wise Summary */}
       <StudentAttendanceSummary filteredRecords={filteredRecords} />
