@@ -25,6 +25,27 @@ interface StudentDetailModalProps {
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+interface StudentRemark {
+  id: string;
+  text: string;
+  date: string;
+  tag: "general" | "concern" | "improvement" | "appreciation";
+}
+
+const TAG_STYLES: Record<StudentRemark["tag"], string> = {
+  general: "bg-muted text-muted-foreground",
+  concern: "bg-destructive/10 text-destructive border-destructive/20",
+  improvement: "bg-warning/10 text-warning border-warning/20",
+  appreciation: "bg-success/10 text-success border-success/20",
+};
+
+const TAG_LABELS: Record<StudentRemark["tag"], string> = {
+  general: "General",
+  concern: "Concern",
+  improvement: "Improvement",
+  appreciation: "Appreciation",
+};
+
 export default function StudentDetailModal({
   open,
   onOpenChange,
@@ -33,6 +54,10 @@ export default function StudentDetailModal({
   rollNo,
   filteredRecords,
 }: StudentDetailModalProps) {
+  const [remarks, setRemarks] = useState<StudentRemark[]>([]);
+  const [newRemark, setNewRemark] = useState("");
+  const [selectedTag, setSelectedTag] = useState<StudentRemark["tag"]>("general");
+  const [showRemarkInput, setShowRemarkInput] = useState(false);
   // Build a map of date -> status for this student
   const dailyStatus = useMemo(() => {
     const map = new Map<string, AttendanceStatus>();
