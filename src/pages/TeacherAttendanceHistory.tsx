@@ -429,6 +429,9 @@ export default function TeacherAttendanceHistory() {
       {/* Attendance Trend Chart */}
       <AttendanceTrendChart filteredRecords={filteredRecords} />
 
+      {/* Weekly Attendance Heatmap */}
+      <WeeklyAttendanceHeatmap filteredRecords={filteredRecords} />
+
       {/* Student-wise Summary */}
       <StudentAttendanceSummary filteredRecords={filteredRecords} />
 
