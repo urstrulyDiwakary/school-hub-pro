@@ -33,6 +33,7 @@ import type { AttendanceStatus } from "@/data/teacherData";
 import StudentAttendanceSummary from "@/components/teacher/StudentAttendanceSummary";
 import AttendanceTrendChart from "@/components/teacher/AttendanceTrendChart";
 import WeeklyAttendanceHeatmap from "@/components/teacher/WeeklyAttendanceHeatmap";
+import ClassCalendarHeatmap from "@/components/teacher/ClassCalendarHeatmap";
 
 export default function TeacherAttendanceHistory() {
   const [selectedClass, setSelectedClass] = useState("1");
