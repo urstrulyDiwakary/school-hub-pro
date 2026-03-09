@@ -381,6 +381,7 @@ export default function StudentDetailModal({
               ))}
             </div>
           )}
+        </div>
       </DialogContent>
     </Dialog>
   );
