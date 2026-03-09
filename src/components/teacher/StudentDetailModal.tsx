@@ -264,6 +264,123 @@ export default function StudentDetailModal({
             No record
           </div>
         </div>
+
+        {/* Teacher Remarks Section */}
+        <div className="mt-4 pt-3 border-t border-border/50 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <MessageSquarePlus className="h-4 w-4 text-primary" />
+              Teacher Remarks
+            </div>
+            {!showRemarkInput && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-7"
+                onClick={() => setShowRemarkInput(true)}
+              >
+                <MessageSquarePlus className="h-3.5 w-3.5" />
+                Add Note
+              </Button>
+            )}
+          </div>
+
+          {/* Add remark form */}
+          {showRemarkInput && (
+            <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
+              <Textarea
+                placeholder="Write a remark about this student's attendance, behavior, or performance..."
+                value={newRemark}
+                onChange={(e) => setNewRemark(e.target.value)}
+                rows={3}
+                className="text-sm resize-none"
+              />
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(Object.keys(TAG_LABELS) as StudentRemark["tag"][]).map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-[11px] font-medium border transition-all",
+                      selectedTag === tag
+                        ? cn(TAG_STYLES[tag], "ring-1 ring-offset-1 ring-primary/30")
+                        : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                    )}
+                  >
+                    {TAG_LABELS[tag]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => { setShowRemarkInput(false); setNewRemark(""); }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-1.5 text-xs h-7"
+                  disabled={!newRemark.trim()}
+                  onClick={() => {
+                    const remark: StudentRemark = {
+                      id: crypto.randomUUID(),
+                      text: newRemark.trim(),
+                      date: new Date().toISOString(),
+                      tag: selectedTag,
+                    };
+                    setRemarks((prev) => [remark, ...prev]);
+                    setNewRemark("");
+                    setSelectedTag("general");
+                    setShowRemarkInput(false);
+                    toast.success("Remark added");
+                  }}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Existing remarks */}
+          {remarks.length === 0 && !showRemarkInput ? (
+            <p className="text-xs text-muted-foreground italic">No remarks yet. Click "Add Note" to add one.</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {remarks.map((remark) => (
+                <div
+                  key={remark.id}
+                  className="rounded-lg border border-border/50 p-2.5 group hover:bg-muted/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", TAG_STYLES[remark.tag])}>
+                          {TAG_LABELS[remark.tag]}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(parseISO(remark.date), "MMM dd, hh:mm a")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground leading-relaxed">{remark.text}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setRemarks((prev) => prev.filter((r) => r.id !== remark.id));
+                        toast.success("Remark deleted");
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
       </DialogContent>
     </Dialog>
   );
