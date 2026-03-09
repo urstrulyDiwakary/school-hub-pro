@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
-import { CheckCircle2, XCircle, Clock, CalendarDays, Flame, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, CalendarDays, Flame, Trophy, MessageSquarePlus, Send, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
