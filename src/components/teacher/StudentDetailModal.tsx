@@ -54,10 +54,25 @@ export default function StudentDetailModal({
   rollNo,
   filteredRecords,
 }: StudentDetailModalProps) {
-  const [remarks, setRemarks] = useState<StudentRemark[]>([]);
+  const storageKey = `teacher-remarks-${studentId}`;
+  const [remarks, setRemarks] = useState<StudentRemark[]>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   const [newRemark, setNewRemark] = useState("");
   const [selectedTag, setSelectedTag] = useState<StudentRemark["tag"]>("general");
   const [showRemarkInput, setShowRemarkInput] = useState(false);
+
+  // Sync remarks to localStorage whenever they change
+  const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
+    setRemarks((prev) => {
+      const next = updater(prev);
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      return next;
+    });
+  }, [storageKey]);
   // Build a map of date -> status for this student
   const dailyStatus = useMemo(() => {
     const map = new Map<string, AttendanceStatus>();
