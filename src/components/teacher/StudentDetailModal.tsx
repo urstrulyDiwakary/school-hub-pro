@@ -368,11 +368,69 @@ export default function StudentDetailModal({
             <p className="text-xs text-muted-foreground italic">No remarks yet. Click "Add Note" to add one.</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {remarks.map((remark) => (
+              {remarks.map((remark) => {
+                const isEditing = editingId === remark.id;
+                return (
                 <div
                   key={remark.id}
                   className="rounded-lg border border-border/50 p-2.5 group hover:bg-muted/20 transition-colors"
                 >
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        rows={2}
+                        className="text-sm resize-none"
+                      />
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(Object.keys(TAG_LABELS) as StudentRemark["tag"][]).map((tag) => (
+                          <button
+                            key={tag}
+                            onClick={() => setEditTag(tag)}
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-[11px] font-medium border transition-all",
+                              editTag === tag
+                                ? cn(TAG_STYLES[tag], "ring-1 ring-offset-1 ring-primary/30")
+                                : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                            )}
+                          >
+                            {TAG_LABELS[tag]}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-7 gap-1"
+                          onClick={() => setEditingId(null)}
+                        >
+                          <X className="h-3 w-3" />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="text-xs h-7 gap-1"
+                          disabled={!editText.trim()}
+                          onClick={() => {
+                            updateRemarks((prev) =>
+                              prev.map((r) =>
+                                r.id === remark.id
+                                  ? { ...r, text: editText.trim(), tag: editTag }
+                                  : r
+                              )
+                            );
+                            setEditingId(null);
+                            toast.success("Remark updated");
+                          }}
+                        >
+                          <Check className="h-3 w-3" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -385,18 +443,32 @@ export default function StudentDetailModal({
                       </div>
                       <p className="text-xs text-foreground leading-relaxed">{remark.text}</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        updateRemarks((prev) => prev.filter((r) => r.id !== remark.id));
-                        toast.success("Remark deleted");
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          setEditingId(remark.id);
+                          setEditText(remark.text);
+                          setEditTag(remark.tag);
+                        }}
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          updateRemarks((prev) => prev.filter((r) => r.id !== remark.id));
+                          toast.success("Remark deleted");
+                        }}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
