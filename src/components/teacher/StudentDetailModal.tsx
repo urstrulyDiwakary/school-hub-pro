@@ -384,7 +384,7 @@ export default function StudentDetailModal({
                     </div>
                     <button
                       onClick={() => {
-                        setRemarks((prev) => prev.filter((r) => r.id !== remark.id));
+                        updateRemarks((prev) => prev.filter((r) => r.id !== remark.id));
                         toast.success("Remark deleted");
                       }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1"
