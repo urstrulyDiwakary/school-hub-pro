@@ -346,7 +346,7 @@ export default function StudentDetailModal({
                       date: new Date().toISOString(),
                       tag: selectedTag,
                     };
-                    setRemarks((prev) => [remark, ...prev]);
+                    updateRemarks((prev) => [remark, ...prev]);
                     setNewRemark("");
                     setSelectedTag("general");
                     setShowRemarkInput(false);
