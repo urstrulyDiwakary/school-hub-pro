@@ -64,6 +64,9 @@ export default function StudentDetailModal({
   const [newRemark, setNewRemark] = useState("");
   const [selectedTag, setSelectedTag] = useState<StudentRemark["tag"]>("general");
   const [showRemarkInput, setShowRemarkInput] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editTag, setEditTag] = useState<StudentRemark["tag"]>("general");
 
   // Sync remarks to localStorage whenever they change
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
