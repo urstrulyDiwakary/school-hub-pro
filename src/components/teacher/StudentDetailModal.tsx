@@ -316,7 +316,9 @@ export default function StudentDetailModal({
 
            {/* Tag filter */}
            {remarks.length > 0 && (
-             <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
                <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
                <button
                  onClick={() => setFilterTag("all")}
