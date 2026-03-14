@@ -321,10 +321,20 @@ export default function StudentDetailModal({
 
            {/* Tag filter */}
            {remarks.length > 0 && (
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
-               <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search remarks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-md border border-border/50 bg-background pl-8 pr-3 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+               <div className="flex items-center justify-between gap-2 flex-wrap">
+                 <div className="flex items-center gap-1.5 flex-wrap">
+                 <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
                <button
                  onClick={() => setFilterTag("all")}
                  className={cn(
