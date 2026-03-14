@@ -408,7 +408,7 @@ export default function StudentDetailModal({
             <p className="text-xs text-muted-foreground italic">No remarks yet. Click "Add Note" to add one.</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {remarks.map((remark) => {
+              {filteredRemarks.map((remark) => {
                 const isEditing = editingId === remark.id;
                 return (
                 <div
