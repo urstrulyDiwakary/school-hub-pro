@@ -348,9 +348,17 @@ export default function StudentDetailModal({
                      {TAG_LABELS[tag]} ({count})
                    </button>
                  );
-               })}
-             </div>
-           )}
+                })}
+                </div>
+                <button
+                  onClick={() => setSortOrder((s) => s === "newest" ? "oldest" : "newest")}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium border border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  {sortOrder === "newest" ? "Newest" : "Oldest"}
+                </button>
+              </div>
+            )}
           {showRemarkInput && (
             <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
               <Textarea
