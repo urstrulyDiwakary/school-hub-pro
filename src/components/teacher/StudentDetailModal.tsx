@@ -67,6 +67,12 @@ export default function StudentDetailModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [editTag, setEditTag] = useState<StudentRemark["tag"]>("general");
+  const [filterTag, setFilterTag] = useState<StudentRemark["tag"] | "all">("all");
+
+  const filteredRemarks = useMemo(() => {
+    if (filterTag === "all") return remarks;
+    return remarks.filter((r) => r.tag === filterTag);
+  }, [remarks, filterTag]);
 
   // Sync remarks to localStorage whenever they change
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
@@ -300,10 +306,44 @@ export default function StudentDetailModal({
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 Add Note
               </Button>
-            )}
-          </div>
+             )}
+           </div>
 
-          {/* Add remark form */}
+           {/* Tag filter */}
+           {remarks.length > 0 && (
+             <div className="flex items-center gap-1.5 flex-wrap">
+               <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
+               <button
+                 onClick={() => setFilterTag("all")}
+                 className={cn(
+                   "rounded-full px-2.5 py-1 text-[10px] font-medium border transition-all",
+                   filterTag === "all"
+                     ? "bg-primary/10 text-primary border-primary/30 ring-1 ring-offset-1 ring-primary/30"
+                     : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                 )}
+               >
+                 All ({remarks.length})
+               </button>
+               {(Object.keys(TAG_LABELS) as StudentRemark["tag"][]).map((tag) => {
+                 const count = remarks.filter((r) => r.tag === tag).length;
+                 if (count === 0) return null;
+                 return (
+                   <button
+                     key={tag}
+                     onClick={() => setFilterTag(tag)}
+                     className={cn(
+                       "rounded-full px-2.5 py-1 text-[10px] font-medium border transition-all",
+                       filterTag === tag
+                         ? cn(TAG_STYLES[tag], "ring-1 ring-offset-1 ring-primary/30")
+                         : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                     )}
+                   >
+                     {TAG_LABELS[tag]} ({count})
+                   </button>
+                 );
+               })}
+             </div>
+           )}
           {showRemarkInput && (
             <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
               <Textarea
@@ -368,7 +408,7 @@ export default function StudentDetailModal({
             <p className="text-xs text-muted-foreground italic">No remarks yet. Click "Add Note" to add one.</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {remarks.map((remark) => {
+              {filteredRemarks.map((remark) => {
                 const isEditing = editingId === remark.id;
                 return (
                 <div
