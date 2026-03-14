@@ -67,6 +67,12 @@ export default function StudentDetailModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [editTag, setEditTag] = useState<StudentRemark["tag"]>("general");
+  const [filterTag, setFilterTag] = useState<StudentRemark["tag"] | "all">("all");
+
+  const filteredRemarks = useMemo(() => {
+    if (filterTag === "all") return remarks;
+    return remarks.filter((r) => r.tag === filterTag);
+  }, [remarks, filterTag]);
 
   // Sync remarks to localStorage whenever they change
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
