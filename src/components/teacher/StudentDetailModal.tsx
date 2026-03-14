@@ -306,10 +306,44 @@ export default function StudentDetailModal({
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 Add Note
               </Button>
-            )}
-          </div>
+             )}
+           </div>
 
-          {/* Add remark form */}
+           {/* Tag filter */}
+           {remarks.length > 0 && (
+             <div className="flex items-center gap-1.5 flex-wrap">
+               <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
+               <button
+                 onClick={() => setFilterTag("all")}
+                 className={cn(
+                   "rounded-full px-2.5 py-1 text-[10px] font-medium border transition-all",
+                   filterTag === "all"
+                     ? "bg-primary/10 text-primary border-primary/30 ring-1 ring-offset-1 ring-primary/30"
+                     : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                 )}
+               >
+                 All ({remarks.length})
+               </button>
+               {(Object.keys(TAG_LABELS) as StudentRemark["tag"][]).map((tag) => {
+                 const count = remarks.filter((r) => r.tag === tag).length;
+                 if (count === 0) return null;
+                 return (
+                   <button
+                     key={tag}
+                     onClick={() => setFilterTag(tag)}
+                     className={cn(
+                       "rounded-full px-2.5 py-1 text-[10px] font-medium border transition-all",
+                       filterTag === tag
+                         ? cn(TAG_STYLES[tag], "ring-1 ring-offset-1 ring-primary/30")
+                         : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                     )}
+                   >
+                     {TAG_LABELS[tag]} ({count})
+                   </button>
+                 );
+               })}
+             </div>
+           )}
           {showRemarkInput && (
             <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
               <Textarea
