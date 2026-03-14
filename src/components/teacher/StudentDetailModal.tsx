@@ -373,6 +373,7 @@ export default function StudentDetailModal({
                   {sortOrder === "newest" ? "Newest" : "Oldest"}
                 </button>
               </div>
+              </div>
             )}
           {showRemarkInput && (
             <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
