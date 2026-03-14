@@ -68,11 +68,16 @@ export default function StudentDetailModal({
   const [editText, setEditText] = useState("");
   const [editTag, setEditTag] = useState<StudentRemark["tag"]>("general");
   const [filterTag, setFilterTag] = useState<StudentRemark["tag"] | "all">("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   const filteredRemarks = useMemo(() => {
-    if (filterTag === "all") return remarks;
-    return remarks.filter((r) => r.tag === filterTag);
-  }, [remarks, filterTag]);
+    let result = filterTag === "all" ? remarks : remarks.filter((r) => r.tag === filterTag);
+    return result.slice().sort((a, b) =>
+      sortOrder === "newest"
+        ? new Date(b.date).getTime() - new Date(a.date).getTime()
+        : new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }, [remarks, filterTag, sortOrder]);
 
   // Sync remarks to localStorage whenever they change
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
