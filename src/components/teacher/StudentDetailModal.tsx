@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
-import { CheckCircle2, XCircle, Clock, CalendarDays, Flame, Trophy, MessageSquarePlus, Send, Trash2, Pencil, Check, X } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, CalendarDays, Flame, Trophy, MessageSquarePlus, Send, Trash2, Pencil, Check, X, ArrowUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,11 +68,16 @@ export default function StudentDetailModal({
   const [editText, setEditText] = useState("");
   const [editTag, setEditTag] = useState<StudentRemark["tag"]>("general");
   const [filterTag, setFilterTag] = useState<StudentRemark["tag"] | "all">("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   const filteredRemarks = useMemo(() => {
-    if (filterTag === "all") return remarks;
-    return remarks.filter((r) => r.tag === filterTag);
-  }, [remarks, filterTag]);
+    let result = filterTag === "all" ? remarks : remarks.filter((r) => r.tag === filterTag);
+    return result.slice().sort((a, b) =>
+      sortOrder === "newest"
+        ? new Date(b.date).getTime() - new Date(a.date).getTime()
+        : new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }, [remarks, filterTag, sortOrder]);
 
   // Sync remarks to localStorage whenever they change
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
@@ -311,7 +316,9 @@ export default function StudentDetailModal({
 
            {/* Tag filter */}
            {remarks.length > 0 && (
-             <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
                <span className="text-[10px] text-muted-foreground mr-1">Filter:</span>
                <button
                  onClick={() => setFilterTag("all")}
@@ -341,9 +348,17 @@ export default function StudentDetailModal({
                      {TAG_LABELS[tag]} ({count})
                    </button>
                  );
-               })}
-             </div>
-           )}
+                })}
+                </div>
+                <button
+                  onClick={() => setSortOrder((s) => s === "newest" ? "oldest" : "newest")}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium border border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  {sortOrder === "newest" ? "Newest" : "Oldest"}
+                </button>
+              </div>
+            )}
           {showRemarkInput && (
             <div className="rounded-lg border border-border/50 p-3 space-y-2.5 bg-muted/10">
               <Textarea
