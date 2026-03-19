@@ -10,6 +10,7 @@ import type { AttendanceRecord, AttendanceStatus } from "@/data/teacherData";
 import StudentStatsCards from "./student-detail/StudentStatsCards";
 import StudentCalendarHeatmap from "./student-detail/StudentCalendarHeatmap";
 import StudentRemarksSection from "./student-detail/StudentRemarksSection";
+import StudentExportActions from "./student-detail/StudentExportActions";
 
 interface StudentDetailModalProps {
   open: boolean;
@@ -84,12 +85,19 @@ export default function StudentDetailModal({
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
               {rollNo}
             </span>
-            <div>
+            <div className="flex-1">
               <div className="text-base font-semibold">{studentName}</div>
               <div className="text-xs font-normal text-muted-foreground">
                 Roll No: {rollNo} • {stats.total} days tracked
               </div>
             </div>
+            <StudentExportActions
+              studentName={studentName}
+              rollNo={rollNo}
+              dailyStatus={dailyStatus}
+              stats={stats}
+              studentId={studentId}
+            />
           </DialogTitle>
         </DialogHeader>
 
