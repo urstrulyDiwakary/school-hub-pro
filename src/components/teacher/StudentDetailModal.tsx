@@ -10,6 +10,7 @@ import type { AttendanceRecord, AttendanceStatus } from "@/data/teacherData";
 import StudentStatsCards from "./student-detail/StudentStatsCards";
 import StudentCalendarHeatmap from "./student-detail/StudentCalendarHeatmap";
 import StudentRemarksSection from "./student-detail/StudentRemarksSection";
+import StudentExportActions from "./student-detail/StudentExportActions";
 
 interface StudentDetailModalProps {
   open: boolean;
