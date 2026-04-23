@@ -50,7 +50,7 @@ export default function StudentDetailModal({
               rollNo={rollNo}
               dailyStatus={dailyStatus}
               stats={stats}
-              studentId={studentId}
+              remarks={remarks}
             />
           </DialogTitle>
         </DialogHeader>
