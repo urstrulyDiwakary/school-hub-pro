@@ -26,6 +26,12 @@ import { detectRoleFromPath, type UserRole } from "@/lib/userRole";
 
 type Role = UserRole;
 
+type NavItem = {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+};
+
 const adminPrimary: NavItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { title: "Students", icon: Users, href: "/students" },
@@ -58,7 +64,7 @@ const teacherMore: NavItem[] = [
 
 export function BottomNavBar() {
   const location = useLocation();
-  const role = detectRole(location.pathname);
+  const role: Role = detectRoleFromPath(location.pathname);
 
   const primary = role === "teacher" ? teacherPrimary : adminPrimary;
   const more = role === "teacher" ? teacherMore : adminMore;
