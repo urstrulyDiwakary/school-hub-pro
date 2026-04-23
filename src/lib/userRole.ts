@@ -1,7 +1,8 @@
 export type UserRole = "admin" | "teacher";
 
 export function detectRoleFromPath(pathname: string): UserRole {
-  return pathname.startsWith("/teacher") ? "teacher" : "admin";
+  // Match /teacher exactly or /teacher/... but not /teachers
+  return pathname === "/teacher" || pathname.startsWith("/teacher/") ? "teacher" : "admin";
 }
 
 export function getCurrentRole(): UserRole {
