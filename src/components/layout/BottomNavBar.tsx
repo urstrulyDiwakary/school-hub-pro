@@ -22,7 +22,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-type Role = "admin" | "teacher";
+import { detectRoleFromPath, type UserRole } from "@/lib/userRole";
+
+type Role = UserRole;
 
 type NavItem = {
   title: string;
@@ -60,13 +62,9 @@ const teacherMore: NavItem[] = [
   { title: "Settings", icon: SettingsIcon, href: "/settings" },
 ];
 
-function detectRole(pathname: string): Role {
-  return pathname.startsWith("/teacher") ? "teacher" : "admin";
-}
-
 export function BottomNavBar() {
   const location = useLocation();
-  const role = detectRole(location.pathname);
+  const role: Role = detectRoleFromPath(location.pathname);
 
   const primary = role === "teacher" ? teacherPrimary : adminPrimary;
   const more = role === "teacher" ? teacherMore : adminMore;

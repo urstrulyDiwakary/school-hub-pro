@@ -1,16 +1,15 @@
-import { useMemo } from "react";
-import { format, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { AttendanceRecord, AttendanceStatus } from "@/data/teacherData";
+import type { AttendanceRecord } from "@/data/teacherData";
 import StudentStatsCards from "./student-detail/StudentStatsCards";
 import StudentCalendarHeatmap from "./student-detail/StudentCalendarHeatmap";
 import StudentRemarksSection from "./student-detail/StudentRemarksSection";
 import StudentExportActions from "./student-detail/StudentExportActions";
+import { useStudentDetailData } from "./student-detail/useStudentDetailData";
 
 interface StudentDetailModalProps {
   open: boolean;
@@ -29,53 +28,8 @@ export default function StudentDetailModal({
   rollNo,
   filteredRecords,
 }: StudentDetailModalProps) {
-  const dailyStatus = useMemo(() => {
-    const map = new Map<string, AttendanceStatus>();
-    filteredRecords.forEach((record) => {
-      const studentRecord = record.records.find((r) => r.studentId === studentId);
-      if (studentRecord) {
-        map.set(record.date, studentRecord.status);
-      }
-    });
-    return map;
-  }, [filteredRecords, studentId]);
-
-  const months = useMemo(() => {
-    const monthSet = new Set<string>();
-    filteredRecords.forEach((r) => {
-      const d = parseISO(r.date);
-      monthSet.add(format(d, "yyyy-MM"));
-    });
-    return Array.from(monthSet).sort();
-  }, [filteredRecords]);
-
-  const { stats, longestStreak, currentStreak } = useMemo(() => {
-    let present = 0, absent = 0, late = 0, total = 0;
-    dailyStatus.forEach((status) => {
-      total++;
-      if (status === "present") present++;
-      if (status === "absent") absent++;
-      if (status === "late") late++;
-    });
-    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
-
-    const sortedDates = Array.from(dailyStatus.keys()).sort();
-    let longest = 0, streak = 0;
-    for (const dateKey of sortedDates) {
-      if (dailyStatus.get(dateKey) === "present") {
-        streak++;
-        if (streak > longest) longest = streak;
-      } else {
-        streak = 0;
-      }
-    }
-
-    return {
-      stats: { present, absent, late, total, rate },
-      longestStreak: longest,
-      currentStreak: streak,
-    };
-  }, [dailyStatus]);
+  const { dailyStatus, months, stats, longestStreak, currentStreak, remarks } =
+    useStudentDetailData(studentId, filteredRecords);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,7 +50,7 @@ export default function StudentDetailModal({
               rollNo={rollNo}
               dailyStatus={dailyStatus}
               stats={stats}
-              studentId={studentId}
+              remarks={remarks}
             />
           </DialogTitle>
         </DialogHeader>

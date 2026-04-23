@@ -7,19 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TAG_STYLES, TAG_LABELS, type StudentRemark } from "./types";
+import { useRemarks, remarksStorageKey, notifyRemarksUpdated } from "./useStudentDetailData";
 
 interface StudentRemarksSectionProps {
   studentId: string;
 }
 
 export default function StudentRemarksSection({ studentId }: StudentRemarksSectionProps) {
-  const storageKey = `teacher-remarks-${studentId}`;
-  const [remarks, setRemarks] = useState<StudentRemark[]>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+  const storageKey = remarksStorageKey(studentId);
+  const remarks = useRemarks(studentId);
   const [newRemark, setNewRemark] = useState("");
   const [selectedTag, setSelectedTag] = useState<StudentRemark["tag"]>("general");
   const [showRemarkInput, setShowRemarkInput] = useState(false);
@@ -44,12 +40,12 @@ export default function StudentRemarksSection({ studentId }: StudentRemarksSecti
   }, [remarks, filterTag, sortOrder, searchQuery]);
 
   const updateRemarks = useCallback((updater: (prev: StudentRemark[]) => StudentRemark[]) => {
-    setRemarks((prev) => {
-      const next = updater(prev);
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      return next;
-    });
-  }, [storageKey]);
+    const prev = remarks;
+    const next = updater(prev);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+    notifyRemarksUpdated(studentId);
+  }, [remarks, storageKey, studentId]);
+
 
   return (
     <div className="mt-4 pt-3 border-t border-border/50 space-y-3">
