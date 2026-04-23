@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,106 +7,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import type { AttendanceStatus } from "@/data/teacherData";
-import type { StudentRemark } from "./types";
-import { TAG_LABELS } from "./types";
 import { format, parseISO } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import type { AttendanceStatus } from "@/data/teacherData";
+import { TAG_LABELS } from "./types";
+import type { StudentStats } from "./useStudentDetailData";
+import type { StudentRemark } from "./types";
+import { exportPermissions, getCurrentRole, type UserRole } from "@/lib/userRole";
 
 interface StudentExportActionsProps {
   studentName: string;
   rollNo: string;
   dailyStatus: Map<string, AttendanceStatus>;
-  stats: { present: number; absent: number; late: number; total: number; rate: number };
-  studentId: string;
-}
-
-function getRemarks(studentId: string): StudentRemark[] {
-  try {
-    const stored = localStorage.getItem(`teacher-remarks-${studentId}`);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function exportCSV({ studentName, rollNo, dailyStatus, stats, studentId }: StudentExportActionsProps) {
-  const remarks = getRemarks(studentId);
-  let csv = "Student Attendance & Remarks Report\n";
-  csv += `Student,${studentName}\nRoll No,${rollNo}\n`;
-  csv += `Attendance Rate,${stats.rate}%\nPresent,${stats.present}\nAbsent,${stats.absent}\nLate,${stats.late}\nTotal Days,${stats.total}\n\n`;
-
-  csv += "Date,Status\n";
-  const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
-  sorted.forEach(([date, status]) => {
-    csv += `${date},${status}\n`;
-  });
-
-  if (remarks.length > 0) {
-    csv += "\nRemarks\nDate,Tag,Remark\n";
-    remarks.forEach((r) => {
-      csv += `${format(parseISO(r.date), "yyyy-MM-dd HH:mm")},${TAG_LABELS[r.tag]},"${r.text.replace(/"/g, '""')}"\n`;
-    });
-  }
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  downloadBlob(blob, `${studentName.replace(/\s+/g, "_")}_report.csv`);
-  toast.success("CSV downloaded");
-}
-
-function exportPDF({ studentName, rollNo, dailyStatus, stats, studentId }: StudentExportActionsProps) {
-  const remarks = getRemarks(studentId);
-  const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
-
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${studentName} Report</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:12px}
-  h1{font-size:18px;margin-bottom:4px}
-  h2{font-size:14px;margin-top:24px;border-bottom:1px solid #ddd;padding-bottom:4px}
-  .subtitle{color:#666;font-size:12px;margin-bottom:16px}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
-  th{background:#f5f5f5;font-weight:600}
-  .present{color:#0d9488} .absent{color:#dc2626} .late{color:#f59e0b}
-  .stats{display:flex;gap:16px;margin:12px 0}
-  .stat-box{border:1px solid #ddd;border-radius:6px;padding:10px 16px;text-align:center}
-  .stat-val{font-size:20px;font-weight:700} .stat-label{font-size:10px;color:#888}
-  @media print{body{margin:20px}}
-</style></head><body>
-<h1>${studentName}</h1>
-<div class="subtitle">Roll No: ${rollNo} • Generated: ${format(new Date(), "MMM dd, yyyy")}</div>
-
-<h2>Attendance Summary</h2>
-<div class="stats">
-  <div class="stat-box"><div class="stat-val">${stats.rate}%</div><div class="stat-label">Rate</div></div>
-  <div class="stat-box"><div class="stat-val present">${stats.present}</div><div class="stat-label">Present</div></div>
-  <div class="stat-box"><div class="stat-val absent">${stats.absent}</div><div class="stat-label">Absent</div></div>
-  <div class="stat-box"><div class="stat-val late">${stats.late}</div><div class="stat-label">Late</div></div>
-</div>
-
-<h2>Daily Attendance (${stats.total} days)</h2>
-<table><tr><th>Date</th><th>Status</th></tr>
-${sorted.map(([d, s]) => `<tr><td>${d}</td><td class="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</td></tr>`).join("")}
-</table>`;
-
-  if (remarks.length > 0) {
-    html += `<h2>Teacher Remarks (${remarks.length})</h2>
-<table><tr><th>Date</th><th>Tag</th><th>Remark</th></tr>
-${remarks.map((r) => `<tr><td>${format(parseISO(r.date), "MMM dd, HH:mm")}</td><td>${TAG_LABELS[r.tag]}</td><td>${r.text}</td></tr>`).join("")}
-</table>`;
-  }
-
-  html += `</body></html>`;
-
-  const printWindow = window.open("", "_blank");
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => printWindow.print(), 300);
-    toast.success("PDF print dialog opened");
-  } else {
-    toast.error("Please allow pop-ups to export PDF");
-  }
+  stats: StudentStats;
+  remarks: StudentRemark[];
+  /** Override for testing or explicit role passing */
+  role?: UserRole;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -120,7 +37,156 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function safeFilename(name: string, ext: string) {
+  return `${name.replace(/\s+/g, "_")}_report.${ext}`;
+}
+
+function exportCSV({ studentName, rollNo, dailyStatus, stats, remarks }: StudentExportActionsProps) {
+  let csv = "Student Attendance & Remarks Report\n";
+  csv += `Student,${studentName}\nRoll No,${rollNo}\n`;
+  csv += `Attendance Rate,${stats.rate}%\nPresent,${stats.present}\nAbsent,${stats.absent}\nLate,${stats.late}\nTotal Days,${stats.total}\n\n`;
+
+  csv += "Date,Status\n";
+  Array.from(dailyStatus.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([date, status]) => {
+      csv += `${date},${status}\n`;
+    });
+
+  if (remarks.length > 0) {
+    csv += "\nRemarks\nDate,Tag,Remark\n";
+    remarks.forEach((r) => {
+      csv += `${format(parseISO(r.date), "yyyy-MM-dd HH:mm")},${TAG_LABELS[r.tag]},"${r.text.replace(/"/g, '""')}"\n`;
+    });
+  }
+
+  try {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    downloadBlob(blob, safeFilename(studentName, "csv"));
+    toast.success("CSV downloaded");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to generate CSV");
+  }
+}
+
+function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: StudentExportActionsProps) {
+  try {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(studentName, 40, 50);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(110);
+    doc.text(
+      `Roll No: ${rollNo}  •  Generated: ${format(new Date(), "MMM dd, yyyy")}`,
+      40,
+      66,
+    );
+    doc.setTextColor(0);
+
+    // Stats
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Attendance Summary", 40, 96);
+
+    autoTable(doc, {
+      startY: 104,
+      head: [["Rate", "Present", "Absent", "Late", "Total"]],
+      body: [[
+        `${stats.rate}%`,
+        String(stats.present),
+        String(stats.absent),
+        String(stats.late),
+        String(stats.total),
+      ]],
+      theme: "grid",
+      styles: { fontSize: 10, halign: "center" },
+      headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
+    });
+
+    // Daily attendance
+    const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
+    if (sorted.length > 0) {
+      const startY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Daily Attendance (${stats.total} days)`, 40, startY);
+      autoTable(doc, {
+        startY: startY + 8,
+        head: [["Date", "Status"]],
+        body: sorted.map(([d, s]) => [d, s.charAt(0).toUpperCase() + s.slice(1)]),
+        theme: "striped",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 100 } },
+      });
+    }
+
+    // Remarks
+    if (remarks.length > 0) {
+      const startY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Teacher Remarks (${remarks.length})`, 40, startY);
+      autoTable(doc, {
+        startY: startY + 8,
+        head: [["Date", "Tag", "Remark"]],
+        body: remarks.map((r) => [
+          format(parseISO(r.date), "MMM dd, HH:mm"),
+          TAG_LABELS[r.tag],
+          r.text,
+        ]),
+        theme: "striped",
+        styles: { fontSize: 9, cellWidth: "wrap" },
+        headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 90 }, 1: { cellWidth: 80 }, 2: { cellWidth: pageWidth - 270 } },
+      });
+    }
+
+    doc.save(safeFilename(studentName, "pdf"));
+    toast.success("PDF downloaded");
+  } catch (err) {
+    console.error(err);
+    // Fallback: download an HTML report the user can open and print
+    try {
+      const html = buildHtmlFallback({ studentName, rollNo, stats, dailyStatus, remarks });
+      const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+      downloadBlob(blob, safeFilename(studentName, "html"));
+      toast.warning("PDF generation failed — downloaded HTML report as fallback");
+    } catch {
+      toast.error("Failed to generate report");
+    }
+  }
+}
+
+function buildHtmlFallback({
+  studentName, rollNo, stats, dailyStatus, remarks,
+}: Pick<StudentExportActionsProps, "studentName" | "rollNo" | "stats" | "dailyStatus" | "remarks">) {
+  const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
+  const rows = sorted.map(([d, s]) => `<tr><td>${d}</td><td>${s}</td></tr>`).join("");
+  const remarkRows = remarks
+    .map((r) => `<tr><td>${format(parseISO(r.date), "MMM dd, HH:mm")}</td><td>${TAG_LABELS[r.tag]}</td><td>${r.text}</td></tr>`)
+    .join("");
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${studentName} Report</title>
+<style>body{font-family:system-ui,Arial,sans-serif;margin:40px;color:#222}table{border-collapse:collapse;width:100%;margin:8px 0}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5}</style>
+</head><body><h1>${studentName}</h1><p>Roll No: ${rollNo}</p>
+<h2>Attendance Summary</h2><p>Rate: ${stats.rate}% • Present: ${stats.present} • Absent: ${stats.absent} • Late: ${stats.late} • Total: ${stats.total}</p>
+<h2>Daily Attendance</h2><table><tr><th>Date</th><th>Status</th></tr>${rows}</table>
+${remarks.length ? `<h2>Remarks</h2><table><tr><th>Date</th><th>Tag</th><th>Remark</th></tr>${remarkRows}</table>` : ""}
+</body></html>`;
+}
+
 export default function StudentExportActions(props: StudentExportActionsProps) {
+  const role = props.role ?? getCurrentRole();
+  const perms = exportPermissions[role];
+
+  if (!perms.csv && !perms.pdf) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -130,12 +196,18 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => exportCSV(props)}>
-          Download CSV
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportPDF(props)}>
-          Print / Save as PDF
-        </DropdownMenuItem>
+        {perms.csv && (
+          <DropdownMenuItem onClick={() => exportCSV(props)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Download CSV
+          </DropdownMenuItem>
+        )}
+        {perms.pdf && (
+          <DropdownMenuItem onClick={() => exportPDF(props)}>
+            <FileText className="mr-2 h-4 w-4" />
+            Download PDF
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
