@@ -92,14 +92,18 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>) {
 // --- Tests ---------------------------------------------------------------
 
 describe("StudentExportActions — role-gated dropdown items", () => {
-  it("admin sees both CSV and PDF options", () => {
+  it("admin sees both CSV and PDF options", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
     expect(screen.getByText(/download csv/i)).toBeInTheDocument();
     expect(screen.getByText(/download pdf/i)).toBeInTheDocument();
   });
 
-  it("teacher NEVER sees CSV option, only PDF", () => {
+  it("teacher NEVER sees CSV option, only PDF", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
@@ -109,6 +113,7 @@ describe("StudentExportActions — role-gated dropdown items", () => {
 
 describe("StudentExportActions — CSV format & column order", () => {
   it("CSV for admin includes attendance and remarks sections in expected order", async () => {
+    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
     await user.click(await screen.findByText(/download csv/i));
@@ -145,7 +150,9 @@ describe("StudentExportActions — CSV format & column order", () => {
     expect(capturedCsv).toContain('"Said ""hi"""');
   });
 
-  it("teacher cannot trigger CSV (menu item not rendered)", () => {
+  it("teacher cannot trigger CSV (menu item not rendered)", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
@@ -153,7 +160,9 @@ describe("StudentExportActions — CSV format & column order", () => {
 });
 
 describe("StudentExportActions — error states", () => {
-  it("shows error toast when CSV blob construction fails", () => {
+  it("shows error toast when CSV blob construction fails", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     const BlobOrig = global.Blob;
     // @ts-expect-error force constructor failure
     global.Blob = function () { throw new Error("blob fail"); };
@@ -169,6 +178,7 @@ describe("StudentExportActions — error states", () => {
   });
 
   it("falls back to HTML with warning toast when jsPDF throws", async () => {
+    const user = userEvent.setup();
     pdfState.shouldThrow = true;
 
     render(<StudentExportActions {...baseProps} role="admin" />);
@@ -186,7 +196,9 @@ describe("StudentExportActions — error states", () => {
     expect(capturedCsv).toContain("Asha Kumar");
   });
 
-  it("shows hard error toast when both PDF and HTML fallback fail", () => {
+  it("shows hard error toast when both PDF and HTML fallback fail", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     pdfState.shouldThrow = true;
     const BlobOrig = global.Blob;
     // @ts-expect-error force fallback failure too
@@ -201,7 +213,9 @@ describe("StudentExportActions — error states", () => {
     global.Blob = BlobOrig;
   });
 
-  it("PDF success path saves file and toasts success", () => {
+  it("PDF success path saves file and toasts success", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
     await user.click(await screen.findByText(/download pdf/i));
@@ -213,6 +227,7 @@ describe("StudentExportActions — error states", () => {
 
 describe("StudentExportActions — remarks edits flow into exports immediately", () => {
   it("CSV reflects updated remark list passed via props (admin)", async () => {
+    const user = userEvent.setup();
     const { rerender } = render(<StudentExportActions {...baseProps} role="admin" />);
 
     // First export — original remarks
@@ -238,7 +253,9 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     expect(capturedCsv).toContain("Improvement"); // tag label
   });
 
-  it("PDF generation receives updated remarks for teacher role", () => {
+  it("PDF generation receives updated remarks for teacher role", async () => {
+    const user = userEvent.setup();
+    const user = userEvent.setup();
     const { rerender } = render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
     await user.click(await screen.findByText(/download pdf/i));
