@@ -14,7 +14,7 @@ import type { AttendanceStatus } from "@/data/teacherData";
 import { TAG_LABELS } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
 import type { StudentRemark } from "./types";
-import { exportPermissions, getCurrentRole, type UserRole } from "@/lib/userRole";
+import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 
 interface StudentExportActionsProps {
   studentName: string;
@@ -182,8 +182,10 @@ ${remarks.length ? `<h2>Remarks</h2><table><tr><th>Date</th><th>Tag</th><th>Rema
 }
 
 export default function StudentExportActions(props: StudentExportActionsProps) {
-  const role = props.role ?? getCurrentRole();
-  const perms = exportPermissions[role];
+  // Route-aware guard: intersect prop role with the role detected from the
+  // current URL. The stricter side wins, so a teacher route can NEVER expose
+  // CSV even if `role="admin"` is passed or UI state is manipulated.
+  const perms = resolveEffectivePermissions(props.role);
 
   if (!perms.csv && !perms.pdf) return null;
 
@@ -197,7 +199,14 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {perms.csv && (
-          <DropdownMenuItem onClick={() => exportCSV(props)}>
+          <DropdownMenuItem
+            onClick={() => {
+              // Defense-in-depth: re-check at click time in case props or
+              // route changed between render and click.
+              if (!resolveEffectivePermissions(props.role).csv) return;
+              exportCSV(props);
+            }}
+          >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Download CSV
           </DropdownMenuItem>

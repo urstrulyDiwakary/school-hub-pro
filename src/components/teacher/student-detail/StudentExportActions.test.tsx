@@ -5,6 +5,7 @@ import StudentExportActions from "./StudentExportActions";
 import type { AttendanceStatus } from "@/data/teacherData";
 import type { StudentRemark } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
+import { expectExportToast } from "@/test/exportToastAssertions";
 
 // --- Mocks ---------------------------------------------------------------
 
@@ -125,7 +126,7 @@ describe("StudentExportActions — CSV format & column order", () => {
     // Wait one tick for blob.text() to resolve
     await act(async () => { await Promise.resolve(); });
 
-    expect(toastMock.success).toHaveBeenCalledWith("CSV downloaded");
+    expectExportToast(toastMock, "csvSuccess");
 
     // Header block
     expect(capturedCsv).toContain("Student Attendance & Remarks Report");
@@ -173,8 +174,7 @@ describe("StudentExportActions — error states", () => {
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
 
-    expect(toastMock.error).toHaveBeenCalledWith("Failed to generate CSV");
-    expect(toastMock.success).not.toHaveBeenCalled();
+    expectExportToast(toastMock, "csvFailure");
 
     global.Blob = BlobOrig;
   });
@@ -190,9 +190,7 @@ describe("StudentExportActions — error states", () => {
     await act(async () => { await Promise.resolve(); });
 
     expect(pdfSaveMock).not.toHaveBeenCalled();
-    expect(toastMock.warning).toHaveBeenCalledWith(
-      "PDF generation failed — downloaded HTML report as fallback",
-    );
+    expectExportToast(toastMock, "pdfFallbackWarning");
     // HTML fallback was downloaded
     expect(capturedCsv).toContain("<!DOCTYPE html>");
     expect(capturedCsv).toContain("Asha Kumar");
@@ -209,7 +207,7 @@ describe("StudentExportActions — error states", () => {
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
-    expect(toastMock.error).toHaveBeenCalledWith("Failed to generate report");
+    expectExportToast(toastMock, "pdfHardFailure");
 
     global.Blob = BlobOrig;
   });
@@ -221,7 +219,7 @@ describe("StudentExportActions — error states", () => {
     await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
     expect(pdfSaveMock).toHaveBeenCalledWith("Asha_Kumar_report.pdf");
-    expect(toastMock.success).toHaveBeenCalledWith("PDF downloaded");
+    expectExportToast(toastMock, "pdfSuccess");
   });
 });
 
@@ -271,5 +269,93 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     // Teachers still cannot CSV
     await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
+  });
+});
+
+// -------------------------------------------------------------------------
+// Snapshot tests — lock CSV header + attendance/remarks column order/format
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — CSV snapshots (locked format)", () => {
+  it("admin CSV matches snapshot (header + attendance + remarks columns/order)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
+    await act(async () => { await Promise.resolve(); });
+
+    expect(capturedCsv).toMatchInlineSnapshot(`
+      "Student Attendance & Remarks Report
+      Student,Asha Kumar
+      Roll No,12
+      Attendance Rate,80%
+      Present,8
+      Absent,1
+      Late,1
+      Total Days,10
+
+      Date,Status
+      2025-01-01,present
+      2025-01-02,absent
+      2025-01-03,present
+
+      Remarks
+      Date,Tag,Remark
+      2025-01-02 10:00,Appreciation,"Great work"
+      2025-01-03 10:00,General,"Said ""hi"""
+      "
+    `);
+  });
+
+  it("teacher cannot generate CSV at all (snapshot stays empty)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="teacher" />);
+    await openMenu(user);
+    // CSV menu item must not exist for teachers — guard at render time.
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
+    expect(capturedCsv).toMatchInlineSnapshot(`""`);
+  });
+});
+
+// -------------------------------------------------------------------------
+// Route-aware guard tests — CSV stays hidden on teacher routes regardless
+// of props or UI state manipulation.
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — route-aware guard", () => {
+  const originalLocation = window.location;
+  const setPath = (pathname: string) => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, pathname },
+    });
+  };
+  afterEach(() => {
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("CSV is hidden on /teacher/* even when role='admin' prop is forced", async () => {
+    setPath("/teacher/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /download pdf/i })).toBeInTheDocument();
+  });
+
+  it("CSV is shown on admin routes when role='admin'", async () => {
+    setPath("/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.getByRole("menuitem", { name: /download csv/i })).toBeInTheDocument();
+  });
+
+  it("CSV is hidden on admin routes when role='teacher' (stricter wins)", async () => {
+    setPath("/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="teacher" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
   });
 });
