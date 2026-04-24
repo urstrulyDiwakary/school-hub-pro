@@ -68,8 +68,13 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   URL.createObjectURL = vi.fn((blob: Blob) => {
-    // Read text out of the blob so tests can assert formatting/order
-    blob.text().then((t) => { capturedCsv = t; }).catch(() => {});
+    // Capture text synchronously via FileReader-free path
+    try {
+      // @ts-expect-error access internal parts array stored by jsdom
+      const parts = (blob as unknown as { _buffer?: Uint8Array })._buffer;
+      if (parts) capturedCsv = new TextDecoder().decode(parts);
+    } catch { /* ignore */ }
+    blob.text?.().then((t) => { capturedCsv = t; }).catch(() => {});
     return "blob:mock";
   }) as unknown as typeof URL.createObjectURL;
   URL.revokeObjectURL = vi.fn() as unknown as typeof URL.revokeObjectURL;
