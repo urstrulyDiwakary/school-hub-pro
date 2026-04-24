@@ -7,40 +7,34 @@ import type { StudentStats } from "./useStudentDetailData";
 
 // --- Mocks ---------------------------------------------------------------
 
-const toastMock = {
-  success: vi.fn(),
-  error: vi.fn(),
-  warning: vi.fn(),
-};
+const { toastMock, pdfSaveMock, pdfState } = vi.hoisted(() => ({
+  toastMock: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+  pdfSaveMock: vi.fn(),
+  pdfState: { shouldThrow: false },
+}));
+
 vi.mock("sonner", () => ({ toast: toastMock }));
 
-// Capture the body passed to the CSV blob so we can assert column order
+vi.mock("jspdf", () => ({
+  default: vi.fn().mockImplementation(() => {
+    if (pdfState.shouldThrow) throw new Error("pdf boom");
+    return {
+      internal: { pageSize: { getWidth: () => 595 } },
+      setFontSize: vi.fn(),
+      setFont: vi.fn(),
+      setTextColor: vi.fn(),
+      text: vi.fn(),
+      save: pdfSaveMock,
+      lastAutoTable: { finalY: 200 },
+    };
+  }),
+}));
+vi.mock("jspdf-autotable", () => ({ default: vi.fn() }));
+
 let capturedCsv = "";
 const downloadBlobSpy = vi.fn();
-
 const originalCreateObjectURL = URL.createObjectURL;
 const originalRevokeObjectURL = URL.revokeObjectURL;
-
-// jsPDF mock — controllable to simulate failures
-const pdfSaveMock = vi.fn();
-let pdfShouldThrow = false;
-vi.mock("jspdf", () => {
-  return {
-    default: vi.fn().mockImplementation(() => {
-      if (pdfShouldThrow) throw new Error("pdf boom");
-      return {
-        internal: { pageSize: { getWidth: () => 595 } },
-        setFontSize: vi.fn(),
-        setFont: vi.fn(),
-        setTextColor: vi.fn(),
-        text: vi.fn(),
-        save: pdfSaveMock,
-        lastAutoTable: { finalY: 200 },
-      };
-    }),
-  };
-});
-vi.mock("jspdf-autotable", () => ({ default: vi.fn() }));
 
 // --- Fixtures ------------------------------------------------------------
 
