@@ -62,19 +62,20 @@ const baseProps = {
 
 // --- Setup ---------------------------------------------------------------
 
+const RealBlob = global.Blob;
+
 beforeEach(() => {
   capturedCsv = "";
   pdfState.shouldThrow = false;
   vi.clearAllMocks();
 
-  // Spy on Blob to capture text content synchronously (avoids async blob.text())
-  const RealBlob = global.Blob;
-  vi.spyOn(global, "Blob").mockImplementation(((parts: BlobPart[], opts?: BlobPropertyBag) => {
+  // Wrap Blob to capture text content synchronously
+  global.Blob = function (parts: BlobPart[], opts?: BlobPropertyBag) {
     try {
       capturedCsv = (parts ?? []).map((p) => (typeof p === "string" ? p : "")).join("");
     } catch { /* ignore */ }
     return new RealBlob(parts, opts);
-  }) as unknown as typeof Blob);
+  } as unknown as typeof Blob;
 
   URL.createObjectURL = vi.fn(() => "blob:mock") as unknown as typeof URL.createObjectURL;
   URL.revokeObjectURL = vi.fn() as unknown as typeof URL.revokeObjectURL;
@@ -85,6 +86,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  global.Blob = RealBlob;
   URL.createObjectURL = originalCreateObjectURL;
   URL.revokeObjectURL = originalRevokeObjectURL;
 });
