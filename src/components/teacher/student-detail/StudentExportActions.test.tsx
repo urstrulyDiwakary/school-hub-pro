@@ -271,3 +271,91 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
   });
 });
+
+// -------------------------------------------------------------------------
+// Snapshot tests — lock CSV header + attendance/remarks column order/format
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — CSV snapshots (locked format)", () => {
+  it("admin CSV matches snapshot (header + attendance + remarks columns/order)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
+    await act(async () => { await Promise.resolve(); });
+
+    expect(capturedCsv).toMatchInlineSnapshot(`
+      "Student Attendance & Remarks Report
+      Student,Asha Kumar
+      Roll No,12
+      Attendance Rate,80%
+      Present,8
+      Absent,1
+      Late,1
+      Total Days,10
+
+      Date,Status
+      2025-01-01,present
+      2025-01-02,absent
+      2025-01-03,present
+
+      Remarks
+      Date,Tag,Remark
+      2025-01-02 10:00,Appreciation,"Great work"
+      2025-01-03 10:00,General,"Said ""hi"""
+      "
+    `);
+  });
+
+  it("teacher cannot generate CSV at all (snapshot stays empty)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="teacher" />);
+    await openMenu(user);
+    // CSV menu item must not exist for teachers — guard at render time.
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
+    expect(capturedCsv).toMatchInlineSnapshot(`""`);
+  });
+});
+
+// -------------------------------------------------------------------------
+// Route-aware guard tests — CSV stays hidden on teacher routes regardless
+// of props or UI state manipulation.
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — route-aware guard", () => {
+  const originalLocation = window.location;
+  const setPath = (pathname: string) => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, pathname },
+    });
+  };
+  afterEach(() => {
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("CSV is hidden on /teacher/* even when role='admin' prop is forced", async () => {
+    setPath("/teacher/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /download pdf/i })).toBeInTheDocument();
+  });
+
+  it("CSV is shown on admin routes when role='admin'", async () => {
+    setPath("/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.getByRole("menuitem", { name: /download csv/i })).toBeInTheDocument();
+  });
+
+  it("CSV is hidden on admin routes when role='teacher' (stricter wins)", async () => {
+    setPath("/dashboard");
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="teacher" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
+  });
+});
