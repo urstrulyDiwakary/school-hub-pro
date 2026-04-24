@@ -67,13 +67,18 @@ beforeEach(() => {
   pdfState.shouldThrow = false;
   vi.clearAllMocks();
 
-  URL.createObjectURL = vi.fn((blob: Blob) => {
-    blob.text?.().then((t) => { capturedCsv = t; }).catch(() => {});
-    return "blob:mock";
-  }) as unknown as typeof URL.createObjectURL;
+  // Spy on Blob to capture text content synchronously (avoids async blob.text())
+  const RealBlob = global.Blob;
+  vi.spyOn(global, "Blob").mockImplementation(((parts: BlobPart[], opts?: BlobPropertyBag) => {
+    try {
+      capturedCsv = (parts ?? []).map((p) => (typeof p === "string" ? p : "")).join("");
+    } catch { /* ignore */ }
+    return new RealBlob(parts, opts);
+  }) as unknown as typeof Blob);
+
+  URL.createObjectURL = vi.fn(() => "blob:mock") as unknown as typeof URL.createObjectURL;
   URL.revokeObjectURL = vi.fn() as unknown as typeof URL.revokeObjectURL;
 
-  // Stub anchor click so jsdom doesn't navigate
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
     downloadBlobSpy();
   });
