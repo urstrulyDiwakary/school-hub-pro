@@ -114,7 +114,7 @@ describe("StudentExportActions — CSV format & column order", () => {
     const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download csv/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
 
     // Wait one tick for blob.text() to resolve
     await act(async () => { await Promise.resolve(); });
@@ -165,7 +165,7 @@ describe("StudentExportActions — error states", () => {
 
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download csv/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
 
     expect(toastMock.error).toHaveBeenCalledWith("Failed to generate CSV");
     expect(toastMock.success).not.toHaveBeenCalled();
@@ -179,7 +179,7 @@ describe("StudentExportActions — error states", () => {
 
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download pdf/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
     await act(async () => { await Promise.resolve(); });
 
@@ -201,7 +201,7 @@ describe("StudentExportActions — error states", () => {
 
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download pdf/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
     expect(toastMock.error).toHaveBeenCalledWith("Failed to generate report");
 
@@ -212,7 +212,7 @@ describe("StudentExportActions — error states", () => {
     const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download pdf/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
     expect(pdfSaveMock).toHaveBeenCalledWith("Asha_Kumar_report.pdf");
     expect(toastMock.success).toHaveBeenCalledWith("PDF downloaded");
@@ -226,7 +226,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
 
     // First export — original remarks
     await openMenu(user);
-    await user.click(await screen.findByText(/download csv/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
     await act(async () => { await Promise.resolve(); });
     expect(capturedCsv).toContain("Great work");
     expect(capturedCsv).not.toContain("Needs improvement");
@@ -240,7 +240,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
 
     capturedCsv = "";
     await openMenu(user);
-    await user.click(await screen.findByText(/download csv/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
     await act(async () => { await Promise.resolve(); });
 
     expect(capturedCsv).toContain("Needs improvement");
@@ -251,7 +251,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     const user = userEvent.setup();
     const { rerender } = render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
-    await user.click(await screen.findByText(/download pdf/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
     expect(pdfSaveMock).toHaveBeenCalledTimes(1);
 
     const updated: StudentRemark[] = [
@@ -260,7 +260,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     rerender(<StudentExportActions {...baseProps} role="teacher" remarks={updated} />);
 
     await openMenu(user);
-    await user.click(await screen.findByText(/download pdf/i));
+    await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
     expect(pdfSaveMock).toHaveBeenCalledTimes(2);
     // Teachers still cannot CSV
     await openMenu(user);
