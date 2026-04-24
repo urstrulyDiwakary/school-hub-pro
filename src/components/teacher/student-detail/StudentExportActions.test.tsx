@@ -85,8 +85,8 @@ afterEach(() => {
   URL.revokeObjectURL = originalRevokeObjectURL;
 });
 
-function openMenu() {
-  fireEvent.click(screen.getByRole("button", { name: /export/i }));
+async function openMenu(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /export/i }));
 }
 
 // --- Tests ---------------------------------------------------------------
@@ -94,14 +94,14 @@ function openMenu() {
 describe("StudentExportActions — role-gated dropdown items", () => {
   it("admin sees both CSV and PDF options", () => {
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
+    await openMenu(user);
     expect(screen.getByText(/download csv/i)).toBeInTheDocument();
     expect(screen.getByText(/download pdf/i)).toBeInTheDocument();
   });
 
   it("teacher NEVER sees CSV option, only PDF", () => {
     render(<StudentExportActions {...baseProps} role="teacher" />);
-    openMenu();
+    await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
     expect(screen.getByText(/download pdf/i)).toBeInTheDocument();
   });
@@ -110,8 +110,8 @@ describe("StudentExportActions — role-gated dropdown items", () => {
 describe("StudentExportActions — CSV format & column order", () => {
   it("CSV for admin includes attendance and remarks sections in expected order", async () => {
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download csv/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download csv/i));
 
     // Wait one tick for blob.text() to resolve
     await act(async () => { await Promise.resolve(); });
@@ -147,7 +147,7 @@ describe("StudentExportActions — CSV format & column order", () => {
 
   it("teacher cannot trigger CSV (menu item not rendered)", () => {
     render(<StudentExportActions {...baseProps} role="teacher" />);
-    openMenu();
+    await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
   });
 });
@@ -159,8 +159,8 @@ describe("StudentExportActions — error states", () => {
     global.Blob = function () { throw new Error("blob fail"); };
 
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download csv/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download csv/i));
 
     expect(toastMock.error).toHaveBeenCalledWith("Failed to generate CSV");
     expect(toastMock.success).not.toHaveBeenCalled();
@@ -172,8 +172,8 @@ describe("StudentExportActions — error states", () => {
     pdfState.shouldThrow = true;
 
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download pdf/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download pdf/i));
 
     await act(async () => { await Promise.resolve(); });
 
@@ -193,8 +193,8 @@ describe("StudentExportActions — error states", () => {
     global.Blob = function () { throw new Error("blob fail"); };
 
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download pdf/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download pdf/i));
 
     expect(toastMock.error).toHaveBeenCalledWith("Failed to generate report");
 
@@ -203,8 +203,8 @@ describe("StudentExportActions — error states", () => {
 
   it("PDF success path saves file and toasts success", () => {
     render(<StudentExportActions {...baseProps} role="admin" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download pdf/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download pdf/i));
 
     expect(pdfSaveMock).toHaveBeenCalledWith("Asha_Kumar_report.pdf");
     expect(toastMock.success).toHaveBeenCalledWith("PDF downloaded");
@@ -216,8 +216,8 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     const { rerender } = render(<StudentExportActions {...baseProps} role="admin" />);
 
     // First export — original remarks
-    openMenu();
-    fireEvent.click(screen.getByText(/download csv/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download csv/i));
     await act(async () => { await Promise.resolve(); });
     expect(capturedCsv).toContain("Great work");
     expect(capturedCsv).not.toContain("Needs improvement");
@@ -230,8 +230,8 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     rerender(<StudentExportActions {...baseProps} role="admin" remarks={updated} />);
 
     capturedCsv = "";
-    openMenu();
-    fireEvent.click(screen.getByText(/download csv/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download csv/i));
     await act(async () => { await Promise.resolve(); });
 
     expect(capturedCsv).toContain("Needs improvement");
@@ -240,8 +240,8 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
 
   it("PDF generation receives updated remarks for teacher role", () => {
     const { rerender } = render(<StudentExportActions {...baseProps} role="teacher" />);
-    openMenu();
-    fireEvent.click(screen.getByText(/download pdf/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download pdf/i));
     expect(pdfSaveMock).toHaveBeenCalledTimes(1);
 
     const updated: StudentRemark[] = [
@@ -249,11 +249,11 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     ];
     rerender(<StudentExportActions {...baseProps} role="teacher" remarks={updated} />);
 
-    openMenu();
-    fireEvent.click(screen.getByText(/download pdf/i));
+    await openMenu(user);
+    await user.click(await screen.findByText(/download pdf/i));
     expect(pdfSaveMock).toHaveBeenCalledTimes(2);
     // Teachers still cannot CSV
-    openMenu();
+    await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
   });
 });
