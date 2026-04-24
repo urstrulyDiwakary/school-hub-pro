@@ -13,7 +13,17 @@ describe("userRole", () => {
       expect(detectRoleFromPath("/")).toBe("admin");
       expect(detectRoleFromPath("/dashboard")).toBe("admin");
       expect(detectRoleFromPath("/students/123")).toBe("admin");
-      expect(detectRoleFromPath("/teachers")).toBe("admin"); // plural, not /teacher
+    });
+
+    it("does NOT misclassify lookalike paths as teacher", () => {
+      // These all start with "/teacher" textually but are NOT the teacher route
+      expect(detectRoleFromPath("/teachers")).toBe("admin");
+      expect(detectRoleFromPath("/teachers/123")).toBe("admin");
+      expect(detectRoleFromPath("/teacherment")).toBe("admin");
+      expect(detectRoleFromPath("/teacherly")).toBe("admin");
+      expect(detectRoleFromPath("/teacher-admin")).toBe("admin");
+      expect(detectRoleFromPath("/teacher_dashboard")).toBe("admin");
+      expect(detectRoleFromPath("/admin/teacher")).toBe("admin"); // not at root
     });
   });
 
