@@ -14,7 +14,7 @@ import type { AttendanceStatus } from "@/data/teacherData";
 import { TAG_LABELS } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
 import type { StudentRemark } from "./types";
-import { exportPermissions, getCurrentRole, type UserRole } from "@/lib/userRole";
+import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 
 interface StudentExportActionsProps {
   studentName: string;
