@@ -5,6 +5,7 @@ import StudentExportActions from "./StudentExportActions";
 import type { AttendanceStatus } from "@/data/teacherData";
 import type { StudentRemark } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
+import { expectExportToast } from "@/test/exportToastAssertions";
 
 // --- Mocks ---------------------------------------------------------------
 
@@ -125,7 +126,7 @@ describe("StudentExportActions — CSV format & column order", () => {
     // Wait one tick for blob.text() to resolve
     await act(async () => { await Promise.resolve(); });
 
-    expect(toastMock.success).toHaveBeenCalledWith("CSV downloaded");
+    expectExportToast(toastMock, "csvSuccess");
 
     // Header block
     expect(capturedCsv).toContain("Student Attendance & Remarks Report");
@@ -173,8 +174,7 @@ describe("StudentExportActions — error states", () => {
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
 
-    expect(toastMock.error).toHaveBeenCalledWith("Failed to generate CSV");
-    expect(toastMock.success).not.toHaveBeenCalled();
+    expectExportToast(toastMock, "csvFailure");
 
     global.Blob = BlobOrig;
   });
@@ -190,9 +190,7 @@ describe("StudentExportActions — error states", () => {
     await act(async () => { await Promise.resolve(); });
 
     expect(pdfSaveMock).not.toHaveBeenCalled();
-    expect(toastMock.warning).toHaveBeenCalledWith(
-      "PDF generation failed — downloaded HTML report as fallback",
-    );
+    expectExportToast(toastMock, "pdfFallbackWarning");
     // HTML fallback was downloaded
     expect(capturedCsv).toContain("<!DOCTYPE html>");
     expect(capturedCsv).toContain("Asha Kumar");
@@ -209,7 +207,7 @@ describe("StudentExportActions — error states", () => {
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
-    expect(toastMock.error).toHaveBeenCalledWith("Failed to generate report");
+    expectExportToast(toastMock, "pdfHardFailure");
 
     global.Blob = BlobOrig;
   });
@@ -221,7 +219,7 @@ describe("StudentExportActions — error states", () => {
     await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
     expect(pdfSaveMock).toHaveBeenCalledWith("Asha_Kumar_report.pdf");
-    expect(toastMock.success).toHaveBeenCalledWith("PDF downloaded");
+    expectExportToast(toastMock, "pdfSuccess");
   });
 });
 
