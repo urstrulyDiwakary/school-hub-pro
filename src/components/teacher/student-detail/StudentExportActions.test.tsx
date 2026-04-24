@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import StudentExportActions from "./StudentExportActions";
 import type { AttendanceStatus } from "@/data/teacherData";
 import type { StudentRemark } from "./types";
