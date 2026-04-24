@@ -94,7 +94,6 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>) {
 describe("StudentExportActions — role-gated dropdown items", () => {
   it("admin sees both CSV and PDF options", async () => {
     const user = userEvent.setup();
-    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
     expect(screen.getByText(/download csv/i)).toBeInTheDocument();
@@ -102,7 +101,6 @@ describe("StudentExportActions — role-gated dropdown items", () => {
   });
 
   it("teacher NEVER sees CSV option, only PDF", async () => {
-    const user = userEvent.setup();
     const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
@@ -152,7 +150,6 @@ describe("StudentExportActions — CSV format & column order", () => {
 
   it("teacher cannot trigger CSV (menu item not rendered)", async () => {
     const user = userEvent.setup();
-    const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
     expect(screen.queryByText(/download csv/i)).not.toBeInTheDocument();
@@ -161,7 +158,6 @@ describe("StudentExportActions — CSV format & column order", () => {
 
 describe("StudentExportActions — error states", () => {
   it("shows error toast when CSV blob construction fails", async () => {
-    const user = userEvent.setup();
     const user = userEvent.setup();
     const BlobOrig = global.Blob;
     // @ts-expect-error force constructor failure
@@ -198,7 +194,6 @@ describe("StudentExportActions — error states", () => {
 
   it("shows hard error toast when both PDF and HTML fallback fail", async () => {
     const user = userEvent.setup();
-    const user = userEvent.setup();
     pdfState.shouldThrow = true;
     const BlobOrig = global.Blob;
     // @ts-expect-error force fallback failure too
@@ -214,7 +209,6 @@ describe("StudentExportActions — error states", () => {
   });
 
   it("PDF success path saves file and toasts success", async () => {
-    const user = userEvent.setup();
     const user = userEvent.setup();
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
@@ -254,7 +248,6 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
   });
 
   it("PDF generation receives updated remarks for teacher role", async () => {
-    const user = userEvent.setup();
     const user = userEvent.setup();
     const { rerender } = render(<StudentExportActions {...baseProps} role="teacher" />);
     await openMenu(user);
