@@ -63,7 +63,7 @@ const baseProps = {
 
 beforeEach(() => {
   capturedCsv = "";
-  pdfShouldThrow = false;
+  pdfState.shouldThrow = false;
   vi.clearAllMocks();
 
   URL.createObjectURL = vi.fn((blob: Blob) => {
@@ -168,7 +168,7 @@ describe("StudentExportActions — error states", () => {
   });
 
   it("falls back to HTML with warning toast when jsPDF throws", async () => {
-    pdfShouldThrow = true;
+    pdfState.shouldThrow = true;
 
     render(<StudentExportActions {...baseProps} role="admin" />);
     openMenu();
@@ -186,7 +186,7 @@ describe("StudentExportActions — error states", () => {
   });
 
   it("shows hard error toast when both PDF and HTML fallback fail", () => {
-    pdfShouldThrow = true;
+    pdfState.shouldThrow = true;
     const BlobOrig = global.Blob;
     // @ts-expect-error force fallback failure too
     global.Blob = function () { throw new Error("blob fail"); };
