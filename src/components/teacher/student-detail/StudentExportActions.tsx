@@ -15,6 +15,27 @@ import { TAG_LABELS } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
 import type { StudentRemark } from "./types";
 import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
+import { auditLogStore } from "@/lib/exportAuditLog";
+
+function recordAudit(
+  format: "csv" | "pdf" | "htmlFallback",
+  props: { studentName: string; rollNo: string; role?: UserRole },
+  fallback?: boolean,
+) {
+  try {
+    const { effectiveRole } = resolveEffectivePermissions(props.role);
+    auditLogStore.record({
+      format,
+      role: effectiveRole,
+      route: typeof window !== "undefined" ? window.location.pathname : "",
+      studentId: props.rollNo,
+      studentName: props.studentName,
+      fallback,
+    });
+  } catch {
+    // Audit must never block an export.
+  }
+}
 
 interface StudentExportActionsProps {
   studentName: string;
@@ -41,22 +62,49 @@ function safeFilename(name: string, ext: string) {
   return `${name.replace(/\s+/g, "_")}_report.${ext}`;
 }
 
-function exportCSV({ studentName, rollNo, dailyStatus, stats, remarks }: StudentExportActionsProps) {
+/**
+ * RFC 4180 escaping: a field is wrapped in double-quotes if it contains a
+ * comma, double-quote, or newline (CR or LF). Embedded double-quotes are
+ * doubled. Plain values pass through unquoted to keep snapshots stable.
+ */
+function csvField(value: string | number): string {
+  const s = String(value);
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function csvRow(...fields: Array<string | number>): string {
+  return fields.map(csvField).join(",") + "\n";
+}
+
+function exportCSV(props: StudentExportActionsProps) {
+  const { studentName, rollNo, dailyStatus, stats, remarks } = props;
+
   let csv = "Student Attendance & Remarks Report\n";
-  csv += `Student,${studentName}\nRoll No,${rollNo}\n`;
-  csv += `Attendance Rate,${stats.rate}%\nPresent,${stats.present}\nAbsent,${stats.absent}\nLate,${stats.late}\nTotal Days,${stats.total}\n\n`;
+  csv += csvRow("Student", studentName);
+  csv += csvRow("Roll No", rollNo);
+  csv += csvRow("Attendance Rate", `${stats.rate}%`);
+  csv += csvRow("Present", stats.present);
+  csv += csvRow("Absent", stats.absent);
+  csv += csvRow("Late", stats.late);
+  csv += csvRow("Total Days", stats.total);
+  csv += "\n";
 
   csv += "Date,Status\n";
   Array.from(dailyStatus.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([date, status]) => {
-      csv += `${date},${status}\n`;
+      csv += csvRow(date, status);
     });
 
   if (remarks.length > 0) {
     csv += "\nRemarks\nDate,Tag,Remark\n";
     remarks.forEach((r) => {
-      csv += `${format(parseISO(r.date), "yyyy-MM-dd HH:mm")},${TAG_LABELS[r.tag]},"${r.text.replace(/"/g, '""')}"\n`;
+      csv += csvRow(
+        format(parseISO(r.date), "yyyy-MM-dd HH:mm"),
+        TAG_LABELS[r.tag],
+        r.text,
+      );
     });
   }
 
@@ -64,13 +112,15 @@ function exportCSV({ studentName, rollNo, dailyStatus, stats, remarks }: Student
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     downloadBlob(blob, safeFilename(studentName, "csv"));
     toast.success("CSV downloaded");
+    recordAudit("csv", props);
   } catch (err) {
     console.error(err);
     toast.error("Failed to generate CSV");
   }
 }
 
-function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: StudentExportActionsProps) {
+function exportPDF(props: StudentExportActionsProps) {
+  const { studentName, rollNo, dailyStatus, stats, remarks } = props;
   try {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -150,6 +200,7 @@ function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: Student
 
     doc.save(safeFilename(studentName, "pdf"));
     toast.success("PDF downloaded");
+    recordAudit("pdf", props);
   } catch (err) {
     console.error(err);
     // Fallback: download an HTML report the user can open and print
@@ -158,6 +209,7 @@ function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: Student
       const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
       downloadBlob(blob, safeFilename(studentName, "html"));
       toast.warning("PDF generation failed — downloaded HTML report as fallback");
+      recordAudit("htmlFallback", props, true);
     } catch {
       toast.error("Failed to generate report");
     }

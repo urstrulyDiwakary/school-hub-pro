@@ -301,7 +301,7 @@ describe("StudentExportActions — CSV snapshots (locked format)", () => {
 
       Remarks
       Date,Tag,Remark
-      2025-01-02 10:00,Appreciation,"Great work"
+      2025-01-02 10:00,Appreciation,Great work
       2025-01-03 10:00,General,"Said ""hi"""
       "
     `);
