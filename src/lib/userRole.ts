@@ -34,6 +34,8 @@
  * delimiter. This prevents lookalike admin routes from being misclassified.
  */
 
+import { exportConfigStore } from "./exportConfig";
+
 export type UserRole = "admin" | "teacher";
 
 export function detectRoleFromPath(pathname: string): UserRole {
@@ -75,10 +77,6 @@ export const exportPermissions: Record<UserRole, { csv: boolean; pdf: boolean; h
  * state is manipulated, the route check + school config still apply.
  */
 export function resolveEffectivePermissions(propRole?: UserRole) {
-  // Lazy import to avoid a circular module reference if any consumer of
-  // exportConfig later imports userRole at module scope.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { exportConfigStore } = require("./exportConfig") as typeof import("./exportConfig");
   const config = exportConfigStore.get();
 
   const routeRole = getCurrentRole();
