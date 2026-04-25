@@ -59,22 +59,41 @@ export const exportPermissions: Record<UserRole, { csv: boolean; pdf: boolean; h
 };
 
 /**
- * Resolve the EFFECTIVE permissions for a render. We intersect the explicitly
- * passed role (if any) with the role detected from the current route.
+ * Resolve the EFFECTIVE permissions for a render.
  *
- * Rationale: a teacher viewing the teacher panel must NEVER see CSV, even if
- * a buggy parent passes `role="admin"` or DOM/state is manipulated. We take
- * the **stricter** of the two roles — if EITHER side says "no CSV", CSV is
- * disabled. This makes route-aware role guarding tamper-resistant.
+ * Layers, in order (each layer can only further RESTRICT, never expand a
+ * granted permission — except the school config layer which is authoritative
+ * because admins explicitly opted into it):
+ *
+ *   1. School config (`exportConfigStore`) — authoritative per-role matrix
+ *      that OVERRIDES the hardcoded defaults. Admins configure this in
+ *      `/settings/export-permissions`.
+ *   2. Prop role vs route role — the stricter of the two wins. A teacher
+ *      route can NEVER expose CSV even if `role="admin"` is passed.
+ *
+ * This makes the guard tamper-resistant: even if a parent component or DOM
+ * state is manipulated, the route check + school config still apply.
  */
 export function resolveEffectivePermissions(propRole?: UserRole) {
+  // Lazy import to avoid a circular module reference if any consumer of
+  // exportConfig later imports userRole at module scope.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { exportConfigStore } = require("./exportConfig") as typeof import("./exportConfig");
+  const config = exportConfigStore.get();
+
   const routeRole = getCurrentRole();
-  const propPerms = propRole ? exportPermissions[propRole] : exportPermissions[routeRole];
-  const routePerms = exportPermissions[routeRole];
+  const effectiveRole: UserRole = propRole ?? routeRole;
+
+  const propPerms = config.enabled[effectiveRole];
+  const routePerms = config.enabled[routeRole];
+
   return {
     csv: propPerms.csv && routePerms.csv,
     pdf: propPerms.pdf && routePerms.pdf,
     htmlFallback: propPerms.htmlFallback && routePerms.htmlFallback,
     routeRole,
+    effectiveRole,
+    /** The default format the school configured for this role (UI hint only). */
+    defaultFormat: config.defaultFormat[effectiveRole],
   };
 }
