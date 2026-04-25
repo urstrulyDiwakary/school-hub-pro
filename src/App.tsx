@@ -31,6 +31,8 @@ import Communication from "./pages/Communication";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import ExportPermissions from "./pages/ExportPermissions";
+import ExportConfig from "./pages/ExportConfig";
+import ExportAuditLog from "./pages/ExportAuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +92,8 @@ const App = () => (
             {/* Settings */}
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/export-permissions" element={<ExportPermissions />} />
+            <Route path="/settings/export-config" element={<ExportConfig />} />
+            <Route path="/settings/export-audit" element={<ExportAuditLog />} />
 
             {/* Teacher Panel */}
             <Route path="/teacher" element={<TeacherDashboard />} />
