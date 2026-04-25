@@ -14,7 +14,8 @@
    CheckCircle,
    AlertCircle,
  } from "lucide-react";
- import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
  
  // Mock data for teacher dashboard
  const teacherData = {
@@ -52,7 +53,8 @@
  
  const TeacherDashboard = () => {
    return (
-     <div className="space-y-6">
+      <div className="space-y-6">
+        <E2EStudentDetailFixture />
        {/* Header */}
        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
          <div>
