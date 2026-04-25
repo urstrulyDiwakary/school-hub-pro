@@ -35,19 +35,25 @@ export default function E2EStudentDetailFixture() {
   if (!enabled) return null;
 
   // Deterministic synthetic attendance — keeps export contents stable across runs.
-  const records: AttendanceRecord[] = (
-    [
-      ["2025-01-01", "present"],
-      ["2025-01-02", "absent"],
-      ["2025-01-03", "present"],
-      ["2025-01-06", "late"],
-      ["2025-01-07", "present"],
-    ] as const
-  ).map(([date, status]) => ({
+  const days: Array<[string, AttendanceStatus]> = [
+    ["2025-01-01", "present"],
+    ["2025-01-02", "absent"],
+    ["2025-01-03", "present"],
+    ["2025-01-06", "late"],
+    ["2025-01-07", "present"],
+  ];
+  const records: AttendanceRecord[] = days.map(([date, status]) => ({
     date,
-    status: status as AttendanceStatus,
-    studentId: "e2e-student-1",
     classId: "e2e-class-1",
+    className: "E2E Class",
+    records: [
+      {
+        studentId: "e2e-student-1",
+        studentName: "E2E Test Student",
+        rollNo: "E2E-1",
+        status,
+      },
+    ],
   }));
 
   return (
