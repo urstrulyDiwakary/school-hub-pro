@@ -15,6 +15,27 @@ import { TAG_LABELS } from "./types";
 import type { StudentStats } from "./useStudentDetailData";
 import type { StudentRemark } from "./types";
 import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
+import { auditLogStore } from "@/lib/exportAuditLog";
+
+function recordAudit(
+  format: "csv" | "pdf" | "htmlFallback",
+  props: { studentName: string; rollNo: string; role?: UserRole },
+  fallback?: boolean,
+) {
+  try {
+    const { effectiveRole } = resolveEffectivePermissions(props.role);
+    auditLogStore.record({
+      format,
+      role: effectiveRole,
+      route: typeof window !== "undefined" ? window.location.pathname : "",
+      studentId: props.rollNo,
+      studentName: props.studentName,
+      fallback,
+    });
+  } catch {
+    // Audit must never block an export.
+  }
+}
 
 interface StudentExportActionsProps {
   studentName: string;
