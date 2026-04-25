@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
 
 // Mock student data
 const studentsData = [
@@ -167,6 +168,7 @@ export default function Students() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <E2EStudentDetailFixture />
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="page-header mb-0">
