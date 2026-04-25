@@ -199,6 +199,7 @@ function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: Student
 
     doc.save(safeFilename(studentName, "pdf"));
     toast.success("PDF downloaded");
+    recordAudit("pdf", { studentName, rollNo, role: (arguments[0] as StudentExportActionsProps).role });
   } catch (err) {
     console.error(err);
     // Fallback: download an HTML report the user can open and print
@@ -207,6 +208,7 @@ function exportPDF({ studentName, rollNo, dailyStatus, stats, remarks }: Student
       const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
       downloadBlob(blob, safeFilename(studentName, "html"));
       toast.warning("PDF generation failed — downloaded HTML report as fallback");
+      recordAudit("htmlFallback", { studentName, rollNo, role: (arguments[0] as StudentExportActionsProps).role }, true);
     } catch {
       toast.error("Failed to generate report");
     }
