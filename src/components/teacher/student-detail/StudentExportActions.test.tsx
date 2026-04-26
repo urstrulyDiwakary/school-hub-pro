@@ -359,3 +359,133 @@ describe("StudentExportActions — route-aware guard", () => {
     expect(screen.queryByRole("menuitem", { name: /download csv/i })).toBeNull();
   });
 });
+
+// -------------------------------------------------------------------------
+// HTML fallback as an explicit, configurable export option.
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — HTML option (gated by config)", () => {
+  beforeEach(() => {
+    // Reset any per-school config from previous suites so we test the
+    // hardcoded defaults: admin + teacher both have htmlFallback enabled.
+    window.localStorage.clear();
+  });
+
+  it("admin sees HTML option (default config enables htmlFallback)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(await screen.findByRole("menuitem", { name: /download html/i })).toBeInTheDocument();
+  });
+
+  it("teacher sees HTML option (default config enables htmlFallback)", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="teacher" />);
+    await openMenu(user);
+    expect(await screen.findByRole("menuitem", { name: /download html/i })).toBeInTheDocument();
+  });
+
+  it("clicking HTML downloads an HTML report and toasts success", async () => {
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: /download html/i }));
+    await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("HTML downloaded"));
+    expect(capturedCsv).toContain("<!DOCTYPE html>");
+    expect(capturedCsv).toContain("Asha Kumar");
+  });
+
+  it("HTML option is hidden when school config disables htmlFallback for the role", async () => {
+    // Disable htmlFallback for admin via the school config store.
+    const cfg = {
+      enabled: {
+        admin: { csv: true, pdf: true, htmlFallback: false },
+        teacher: { csv: false, pdf: true, htmlFallback: true },
+      },
+      defaultFormat: { admin: "csv", teacher: "pdf" },
+      updatedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem("school-export-config:v1", JSON.stringify(cfg));
+
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download html/i })).toBeNull();
+    // CSV + PDF still visible
+    expect(screen.getByRole("menuitem", { name: /download csv/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /download pdf/i })).toBeInTheDocument();
+  });
+
+  it("HTML option hidden on /teacher/* if config disables it for teacher", async () => {
+    const cfg = {
+      enabled: {
+        admin: { csv: true, pdf: true, htmlFallback: true },
+        teacher: { csv: false, pdf: true, htmlFallback: false },
+      },
+      defaultFormat: { admin: "csv", teacher: "pdf" },
+      updatedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem("school-export-config:v1", JSON.stringify(cfg));
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, pathname: "/teacher/dashboard" },
+    });
+
+    const user = userEvent.setup();
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    expect(screen.queryByRole("menuitem", { name: /download html/i })).toBeNull();
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+});
+
+// -------------------------------------------------------------------------
+// Error UI with retry button.
+// -------------------------------------------------------------------------
+
+describe("StudentExportActions — error UI with retry", () => {
+  it("shows an inline error alert with a Retry button after CSV failure", async () => {
+    const user = userEvent.setup();
+    const BlobOrig = global.Blob;
+    // @ts-expect-error force constructor failure
+    global.Blob = function () { throw new Error("blob fail"); };
+
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/export failed/i);
+    expect(alert).toHaveTextContent(/failed to generate csv/i);
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+
+    global.Blob = BlobOrig;
+  });
+
+  it("Retry re-runs the last failed export and clears the alert on success", async () => {
+    const user = userEvent.setup();
+    const BlobOrig = global.Blob;
+    let firstCall = true;
+    // Fail once, succeed on retry.
+    global.Blob = function (parts: BlobPart[], opts?: BlobPropertyBag) {
+      if (firstCall) { firstCall = false; throw new Error("blob fail"); }
+      capturedCsv = (parts ?? []).map((p) => (typeof p === "string" ? p : "")).join("");
+      return new BlobOrig(parts, opts);
+    } as unknown as typeof Blob;
+
+    render(<StudentExportActions {...baseProps} role="admin" />);
+    await openMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
+    await screen.findByRole("alert");
+
+    await user.click(screen.getByRole("button", { name: /retry/i }));
+    await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("CSV downloaded"));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(capturedCsv).toContain("Student,Asha Kumar");
+
+    global.Blob = BlobOrig;
+  });
+});
