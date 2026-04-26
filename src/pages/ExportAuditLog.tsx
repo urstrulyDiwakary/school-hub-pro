@@ -25,6 +25,8 @@ export default function ExportAuditLog() {
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [formatFilter, setFormatFilter] = useState<"all" | ExportAuditEntry["format"]>("all");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => auditLogStore.subscribe(() => setEntries(auditLogStore.list())), []);
 
@@ -49,6 +51,8 @@ export default function ExportAuditLog() {
   const filtered = entries.filter((e) => {
     if (roleFilter !== "all" && e.role !== roleFilter) return false;
     if (formatFilter !== "all" && e.format !== formatFilter) return false;
+    if (fromDate && e.timestamp < `${fromDate}T00:00:00.000Z`) return false;
+    if (toDate && e.timestamp > `${toDate}T23:59:59.999Z`) return false;
     if (search) {
       const q = search.toLowerCase();
       if (
@@ -59,6 +63,10 @@ export default function ExportAuditLog() {
     }
     return true;
   });
+
+  const resetFilters = () => {
+    setSearch(""); setRoleFilter("all"); setFormatFilter("all"); setFromDate(""); setToDate("");
+  };
 
   const handleClear = () => {
     auditLogStore.clear();
