@@ -121,8 +121,9 @@ export default function ExportAuditLog() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Input
+              className="lg:col-span-2"
               placeholder="Search student, ID, or route…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -144,6 +145,24 @@ export default function ExportAuditLog() {
                 <SelectItem value="htmlFallback">HTML fallback</SelectItem>
               </SelectContent>
             </Select>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground" htmlFor="audit-from">From</label>
+              <Input id="audit-from" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground" htmlFor="audit-to">To</label>
+              <Input id="audit-to" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              disabled={!search && roleFilter === "all" && formatFilter === "all" && !fromDate && !toDate}
+            >
+              Reset filters
+            </Button>
           </div>
 
           <div className="rounded-md border">
