@@ -63,3 +63,59 @@ test.describe("Student Detail export dropdown — role gating", () => {
     await expect(menu.getByRole("menuitem", { name: /download csv/i })).toHaveCount(0);
   });
 });
+
+// -------------------------------------------------------------------------
+// PDF content assertions — verify the exported PDF includes the student
+// name and the date range header for both admin and teacher routes.
+// -------------------------------------------------------------------------
+
+import { promises as fs } from "node:fs";
+import { PDFParse } from "pdf-parse";
+
+async function downloadAndParsePdf(page: import("@playwright/test").Page, role: "admin" | "teacher") {
+  const route = role === "admin" ? "/students?e2e=studentDetail" : "/teacher/dashboard?e2e=studentDetail";
+  await page.goto(route);
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByRole("button", { name: /export/i }).click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    menu.getByRole("menuitem", { name: /download pdf/i }).click(),
+  ]);
+
+  const filename = download.suggestedFilename();
+  const path = await download.path();
+  if (!path) throw new Error("Download did not complete");
+  const data = await fs.readFile(path);
+  const parser = new PDFParse({ data: new Uint8Array(data) });
+  const result = await parser.getText();
+  return { filename, text: result.text };
+}
+
+test.describe("Student Detail PDF — content for admin vs teacher", () => {
+  test("admin PDF includes student name and date range", async ({ page }) => {
+    const { filename, text } = await downloadAndParsePdf(page, "admin");
+
+    expect(filename).toMatch(/E2E_Test_Student_report\.pdf$/);
+    expect(text).toContain("E2E Test Student");
+    // The fixture seeds a deterministic 30-day window; the PDF header includes
+    // a "Range: YYYY-MM-DD to YYYY-MM-DD" line.
+    expect(text).toMatch(/Range:\s+\d{4}-\d{2}-\d{2}\s+to\s+\d{4}-\d{2}-\d{2}/);
+    expect(text).toContain("Attendance Summary");
+  });
+
+  test("teacher PDF includes student name and date range", async ({ page }) => {
+    const { filename, text } = await downloadAndParsePdf(page, "teacher");
+
+    expect(filename).toMatch(/E2E_Test_Student_report\.pdf$/);
+    expect(text).toContain("E2E Test Student");
+    expect(text).toMatch(/Range:\s+\d{4}-\d{2}-\d{2}\s+to\s+\d{4}-\d{2}-\d{2}/);
+    // Sanity: same content shape regardless of role
+    expect(text).toContain("Attendance Summary");
+  });
+});

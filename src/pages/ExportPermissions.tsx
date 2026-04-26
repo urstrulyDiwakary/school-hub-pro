@@ -25,7 +25,7 @@ interface FormatRow {
 const FORMATS: FormatRow[] = [
   { key: "csv", label: "CSV", description: "Raw spreadsheet export of attendance and remarks. Useful for downstream analysis.", Icon: FileSpreadsheet },
   { key: "pdf", label: "PDF", description: "Formatted report generated in-app via jsPDF. Direct download, no pop-ups.", Icon: FileText },
-  { key: "htmlFallback", label: "HTML fallback", description: "Automatic safety net used when PDF generation fails at runtime.", Icon: FileCode2 },
+  { key: "htmlFallback", label: "HTML report", description: "Standalone HTML report — printable, opens in any browser. Also used as the automatic safety net when PDF generation fails.", Icon: FileCode2 },
 ];
 
 const ROLES: UserRole[] = ["admin", "teacher"];
@@ -53,10 +53,10 @@ const GUARD_SOURCE: Record<ExportFormat, { file: string; symbol: string; lines: 
   },
   htmlFallback: {
     file: "src/components/teacher/student-detail/StudentExportActions.tsx",
-    symbol: "exportPDF (catch branch)",
-    lines: "L202-L215",
+    symbol: "DropdownMenuItem (htmlFallback) + exportPDF (catch branch)",
+    lines: "manual: gated by perms.htmlFallback · auto-fallback: PDF catch",
     explainer:
-      "HTML fallback fires automatically inside the PDF catch block. It inherits the PDF permission and is recorded in the audit log with fallback=true.",
+      "HTML can be downloaded directly as a configurable export option — the menu item only renders when school config enables htmlFallback for the role AND the route role. It also fires automatically inside the PDF catch block as a safety net, recorded in the audit log with fallback=true.",
   },
 };
 

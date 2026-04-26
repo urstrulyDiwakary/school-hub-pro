@@ -25,6 +25,8 @@ export default function ExportAuditLog() {
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [formatFilter, setFormatFilter] = useState<"all" | ExportAuditEntry["format"]>("all");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => auditLogStore.subscribe(() => setEntries(auditLogStore.list())), []);
 
@@ -49,6 +51,8 @@ export default function ExportAuditLog() {
   const filtered = entries.filter((e) => {
     if (roleFilter !== "all" && e.role !== roleFilter) return false;
     if (formatFilter !== "all" && e.format !== formatFilter) return false;
+    if (fromDate && e.timestamp < `${fromDate}T00:00:00.000Z`) return false;
+    if (toDate && e.timestamp > `${toDate}T23:59:59.999Z`) return false;
     if (search) {
       const q = search.toLowerCase();
       if (
@@ -59,6 +63,10 @@ export default function ExportAuditLog() {
     }
     return true;
   });
+
+  const resetFilters = () => {
+    setSearch(""); setRoleFilter("all"); setFormatFilter("all"); setFromDate(""); setToDate("");
+  };
 
   const handleClear = () => {
     auditLogStore.clear();
@@ -113,8 +121,9 @@ export default function ExportAuditLog() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Input
+              className="lg:col-span-2"
               placeholder="Search student, ID, or route…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -136,6 +145,24 @@ export default function ExportAuditLog() {
                 <SelectItem value="htmlFallback">HTML fallback</SelectItem>
               </SelectContent>
             </Select>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground" htmlFor="audit-from">From</label>
+              <Input id="audit-from" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground" htmlFor="audit-to">To</label>
+              <Input id="audit-to" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              disabled={!search && roleFilter === "all" && formatFilter === "all" && !fromDate && !toDate}
+            >
+              Reset filters
+            </Button>
           </div>
 
           <div className="rounded-md border">
