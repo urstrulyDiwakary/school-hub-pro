@@ -72,7 +72,7 @@ async function triggerCsv(
   );
   await user.click(screen.getByRole("button", { name: /export/i }));
   await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
-  await act(async () => { await Promise.resolve(); });
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 }
 
 // --- Tests ---------------------------------------------------------------

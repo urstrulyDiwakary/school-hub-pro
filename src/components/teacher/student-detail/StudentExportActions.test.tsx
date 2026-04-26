@@ -124,7 +124,7 @@ describe("StudentExportActions — CSV format & column order", () => {
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
 
     // Wait one tick for blob.text() to resolve
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 
     expectExportToast(toastMock, "csvSuccess");
 
@@ -187,7 +187,7 @@ describe("StudentExportActions — error states", () => {
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download pdf/i }));
 
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 
     expect(pdfSaveMock).not.toHaveBeenCalled();
     expectExportToast(toastMock, "pdfFallbackWarning");
@@ -231,7 +231,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     // First export — original remarks
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
     expect(capturedCsv).toContain("Great work");
     expect(capturedCsv).not.toContain("Needs improvement");
 
@@ -245,7 +245,7 @@ describe("StudentExportActions — remarks edits flow into exports immediately",
     capturedCsv = "";
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 
     expect(capturedCsv).toContain("Needs improvement");
     expect(capturedCsv).toContain("Improvement"); // tag label
@@ -282,7 +282,7 @@ describe("StudentExportActions — CSV snapshots (locked format)", () => {
     render(<StudentExportActions {...baseProps} role="admin" />);
     await openMenu(user);
     await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 
     expect(capturedCsv).toMatchInlineSnapshot(`
       "Student Attendance & Remarks Report
