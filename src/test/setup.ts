@@ -1,4 +1,14 @@
 import "@testing-library/jest-dom";
+import { beforeEach } from "vitest";
+
+// Reset persisted export config/templates between tests so snapshot tests
+// that rely on hardcoded defaults aren't polluted by other test files.
+beforeEach(() => {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("school-export-config:v1");
+    window.localStorage.removeItem("export-templates:v1");
+  }
+});
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
