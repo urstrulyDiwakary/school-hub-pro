@@ -146,6 +146,20 @@ export default function Students() {
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedGender, setSelectedGender] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [combinedOpen, setCombinedOpen] = useState(false);
+
+  const perms = resolveEffectivePermissions();
+  const canCombine = perms.pdf && perms.effectiveRole === "admin";
+
+  const toggleSelected = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
 
   const filteredStudents = studentsData.filter((student) => {
     const matchesSearch =
