@@ -31,7 +31,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
+import CombinedExportDialog from "@/components/students/CombinedExportDialog";
+import { resolveEffectivePermissions } from "@/lib/userRole";
+import { FileText } from "lucide-react";
 
 // Mock student data
 const studentsData = [
