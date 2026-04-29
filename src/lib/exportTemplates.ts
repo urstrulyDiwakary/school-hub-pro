@@ -33,8 +33,13 @@ export interface ExportTemplates {
 const STORAGE_KEY = "export-templates:v1";
 const CHANGE_EVENT = "export-templates-updated";
 
+/**
+ * Defaults intentionally match the LEGACY single-student export layout so
+ * existing snapshot tests stay locked. New identity fields (admissionNo,
+ * class) are off by default; admins opt in via the templates page.
+ */
 const FULL: ExportTemplate = {
-  identity: { name: true, rollNo: true, admissionNo: true, class: true },
+  identity: { name: true, rollNo: true, admissionNo: false, class: false },
   attendanceColumns: { date: true, status: true, remarks: false },
   sections: { stats: true, daily: true, remarks: true },
 };
