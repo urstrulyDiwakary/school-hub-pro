@@ -467,6 +467,19 @@ export default function Students() {
           </div>
         </div>
       </Card>
+
+      <CombinedExportDialog
+        open={combinedOpen}
+        onOpenChange={setCombinedOpen}
+        students={studentsData
+          .filter((s) => selectedIds.has(s.id))
+          .map((s) => ({
+            id: s.id,
+            admissionNo: s.admissionNo,
+            name: s.name,
+            className: `${s.class}-${s.section}`,
+          }))}
+      />
     </div>
   );
 }
