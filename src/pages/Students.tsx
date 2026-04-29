@@ -297,6 +297,15 @@ export default function Students() {
             </div>
 
             <div className="flex gap-2">
+              {canCombine && selectedIds.size > 0 && (
+                <Button
+                  className="gap-2"
+                  onClick={() => setCombinedOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Combined PDF ({selectedIds.size})
+                </Button>
+              )}
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
               </Button>
@@ -315,6 +324,23 @@ export default function Students() {
           <table className="data-table">
             <thead>
               <tr>
+                {canCombine && (
+                  <th className="w-10">
+                    <Checkbox
+                      aria-label="Select all visible students"
+                      checked={
+                        filteredStudents.length > 0 &&
+                        filteredStudents.every((s) => selectedIds.has(s.id))
+                      }
+                      onCheckedChange={(v) => {
+                        const next = new Set(selectedIds);
+                        if (v) filteredStudents.forEach((s) => next.add(s.id));
+                        else filteredStudents.forEach((s) => next.delete(s.id));
+                        setSelectedIds(next);
+                      }}
+                    />
+                  </th>
+                )}
                 <th>Student</th>
                 <th>Admission No.</th>
                 <th>Class & Section</th>
@@ -326,7 +352,16 @@ export default function Students() {
             </thead>
             <tbody>
               {filteredStudents.map((student) => (
-                <tr key={student.id}>
+                <tr key={student.id} data-state={selectedIds.has(student.id) ? "selected" : undefined}>
+                  {canCombine && (
+                    <td>
+                      <Checkbox
+                        aria-label={`Select ${student.name}`}
+                        checked={selectedIds.has(student.id)}
+                        onCheckedChange={(v) => toggleSelected(student.id, Boolean(v))}
+                      />
+                    </td>
+                  )}
                   <td>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
