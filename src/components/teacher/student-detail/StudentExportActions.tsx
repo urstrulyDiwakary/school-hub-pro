@@ -370,6 +370,20 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
       if (!live[kind]) return;
 
       lastAttempt.current = kind;
+
+      // Pre-flight validation — for CSV especially, surface specific issues
+      // before generating an invalid file.
+      const validation = validateStudentExport(props);
+      if (!validation.ok) {
+        const message = formatValidationMessage(validation);
+        toast.error(message);
+        setError({ kind, message });
+        return;
+      }
+      if (validation.warnings.length > 0) {
+        toast.warning(validation.warnings[0].message);
+      }
+
       setBusy(kind);
       setError(null);
       try {
