@@ -18,6 +18,8 @@ import type { StudentStats } from "./useStudentDetailData";
 import type { StudentRemark } from "./types";
 import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 import { auditLogStore } from "@/lib/exportAuditLog";
+import { exportTemplatesStore, type ExportTemplate } from "@/lib/exportTemplates";
+import { validateStudentExport, formatValidationMessage } from "@/lib/exportValidation";
 
 /** Hard timeout for synchronous export work, ms. */
 const EXPORT_TIMEOUT_MS = 15_000;
