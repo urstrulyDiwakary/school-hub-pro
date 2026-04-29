@@ -629,6 +629,8 @@ export default function StudentProfile() {
               </div>
             </CardContent>
           </Card>
+
+          <StudentExportHistory studentId={studentData.admissionNo} studentName={studentData.name} />
         </TabsContent>
 
         {/* Marks Tab */}
