@@ -31,7 +31,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
+import CombinedExportDialog from "@/components/students/CombinedExportDialog";
+import { resolveEffectivePermissions } from "@/lib/userRole";
+import { FileText } from "lucide-react";
 
 // Mock student data
 const studentsData = [
@@ -142,6 +146,20 @@ export default function Students() {
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedGender, setSelectedGender] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [combinedOpen, setCombinedOpen] = useState(false);
+
+  const perms = resolveEffectivePermissions();
+  const canCombine = perms.pdf && perms.effectiveRole === "admin";
+
+  const toggleSelected = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
 
   const filteredStudents = studentsData.filter((student) => {
     const matchesSearch =
@@ -279,6 +297,15 @@ export default function Students() {
             </div>
 
             <div className="flex gap-2">
+              {canCombine && selectedIds.size > 0 && (
+                <Button
+                  className="gap-2"
+                  onClick={() => setCombinedOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Combined PDF ({selectedIds.size})
+                </Button>
+              )}
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
               </Button>
@@ -297,6 +324,23 @@ export default function Students() {
           <table className="data-table">
             <thead>
               <tr>
+                {canCombine && (
+                  <th className="w-10">
+                    <Checkbox
+                      aria-label="Select all visible students"
+                      checked={
+                        filteredStudents.length > 0 &&
+                        filteredStudents.every((s) => selectedIds.has(s.id))
+                      }
+                      onCheckedChange={(v) => {
+                        const next = new Set(selectedIds);
+                        if (v) filteredStudents.forEach((s) => next.add(s.id));
+                        else filteredStudents.forEach((s) => next.delete(s.id));
+                        setSelectedIds(next);
+                      }}
+                    />
+                  </th>
+                )}
                 <th>Student</th>
                 <th>Admission No.</th>
                 <th>Class & Section</th>
@@ -308,7 +352,16 @@ export default function Students() {
             </thead>
             <tbody>
               {filteredStudents.map((student) => (
-                <tr key={student.id}>
+                <tr key={student.id} data-state={selectedIds.has(student.id) ? "selected" : undefined}>
+                  {canCombine && (
+                    <td>
+                      <Checkbox
+                        aria-label={`Select ${student.name}`}
+                        checked={selectedIds.has(student.id)}
+                        onCheckedChange={(v) => toggleSelected(student.id, Boolean(v))}
+                      />
+                    </td>
+                  )}
                   <td>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
@@ -414,6 +467,19 @@ export default function Students() {
           </div>
         </div>
       </Card>
+
+      <CombinedExportDialog
+        open={combinedOpen}
+        onOpenChange={setCombinedOpen}
+        students={studentsData
+          .filter((s) => selectedIds.has(s.id))
+          .map((s) => ({
+            id: s.id,
+            admissionNo: s.admissionNo,
+            name: s.name,
+            className: `${s.class}-${s.section}`,
+          }))}
+      />
     </div>
   );
 }

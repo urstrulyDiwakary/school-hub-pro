@@ -33,6 +33,7 @@ import Settings from "./pages/Settings";
 import ExportPermissions from "./pages/ExportPermissions";
 import ExportConfig from "./pages/ExportConfig";
 import ExportAuditLog from "./pages/ExportAuditLog";
+import ExportTemplates from "./pages/ExportTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/export-permissions" element={<ExportPermissions />} />
             <Route path="/settings/export-config" element={<ExportConfig />} />
+            <Route path="/settings/export-templates" element={<ExportTemplates />} />
             <Route path="/settings/export-audit" element={<ExportAuditLog />} />
 
             {/* Teacher Panel */}
