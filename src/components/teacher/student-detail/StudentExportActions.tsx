@@ -107,27 +107,63 @@ function withTimeout<T>(work: () => T, ms: number): Promise<T> {
   });
 }
 
+function identityRows(props: StudentExportActionsProps, t: ExportTemplate): Array<[string, string | number]> {
+  const rows: Array<[string, string | number]> = [];
+  if (t.identity.name) rows.push(["Student", props.studentName]);
+  if (t.identity.rollNo) rows.push(["Roll No", props.rollNo]);
+  if (t.identity.admissionNo) rows.push(["Admission No", props.rollNo]);
+  if (t.identity.class) rows.push(["Class", "—"]);
+  return rows;
+}
+
+function remarksByDate(remarks: StudentRemark[]): Map<string, string> {
+  const map = new Map<string, string>();
+  remarks.forEach((r) => {
+    if (!r.date || !r.text) return;
+    const key = r.date.slice(0, 10);
+    const label = `[${TAG_LABELS[r.tag]}] ${r.text}`;
+    map.set(key, map.has(key) ? `${map.get(key)} | ${label}` : label);
+  });
+  return map;
+}
+
 function buildCsv(props: StudentExportActionsProps): string {
-  const { studentName, rollNo, dailyStatus, stats, remarks } = props;
+  const { dailyStatus, stats, remarks } = props;
+  const t = exportTemplatesStore.get().csv;
 
   let csv = "Student Attendance & Remarks Report\n";
-  csv += csvRow("Student", studentName);
-  csv += csvRow("Roll No", rollNo);
-  csv += csvRow("Attendance Rate", `${stats.rate}%`);
-  csv += csvRow("Present", stats.present);
-  csv += csvRow("Absent", stats.absent);
-  csv += csvRow("Late", stats.late);
-  csv += csvRow("Total Days", stats.total);
+  identityRows(props, t).forEach(([k, v]) => { csv += csvRow(k, v); });
+  if (t.sections.stats) {
+    csv += csvRow("Attendance Rate", `${stats.rate}%`);
+    csv += csvRow("Present", stats.present);
+    csv += csvRow("Absent", stats.absent);
+    csv += csvRow("Late", stats.late);
+    csv += csvRow("Total Days", stats.total);
+  }
   csv += "\n";
 
-  csv += "Date,Status\n";
-  Array.from(dailyStatus.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .forEach(([date, status]) => {
-      csv += csvRow(date, status);
-    });
+  if (t.sections.daily) {
+    const cols = t.attendanceColumns;
+    const header: string[] = [];
+    if (cols.date) header.push("Date");
+    if (cols.status) header.push("Status");
+    if (cols.remarks) header.push("Remarks");
+    if (header.length > 0) {
+      csv += header.join(",") + "\n";
+      const remarksMap = cols.remarks ? remarksByDate(remarks) : new Map<string, string>();
+      Array.from(dailyStatus.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([date, status]) => {
+          const row: Array<string | number> = [];
+          if (cols.date) row.push(date);
+          if (cols.status) row.push(status);
+          if (cols.remarks) row.push(remarksMap.get(date) ?? "");
+          csv += csvRow(...row);
+        });
+    }
+  }
 
-  if (remarks.length > 0) {
+  if (t.sections.remarks && remarks.length > 0) {
     csv += "\nRemarks\nDate,Tag,Remark\n";
     remarks.forEach((r) => {
       csv += csvRow(
@@ -149,73 +185,91 @@ function exportCSV(props: StudentExportActionsProps) {
 
 function buildPdf(props: StudentExportActionsProps): jsPDF {
   const { studentName, rollNo, dailyStatus, stats, remarks } = props;
+  const t = exportTemplatesStore.get().pdf;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Compute date range from dailyStatus (sorted ascending)
   const sortedDates = Array.from(dailyStatus.keys()).sort();
   const dateRange =
     sortedDates.length > 0
       ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`
       : "No data";
 
-  // Header
+  // Header — identity-aware
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(studentName, 40, 50);
+  doc.text(t.identity.name ? studentName : "Student Report", 40, 50);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(110);
-  doc.text(
-    `Roll No: ${rollNo}  •  Range: ${dateRange}  •  Generated: ${format(new Date(), "MMM dd, yyyy")}`,
-    40,
-    66,
-  );
+  const headerBits: string[] = [];
+  if (t.identity.rollNo) headerBits.push(`Roll No: ${rollNo}`);
+  if (t.identity.admissionNo) headerBits.push(`Admission: ${rollNo}`);
+  headerBits.push(`Range: ${dateRange}`);
+  headerBits.push(`Generated: ${format(new Date(), "MMM dd, yyyy")}`);
+  doc.text(headerBits.join("  •  "), 40, 66);
   doc.setTextColor(0);
 
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Attendance Summary", 40, 96);
+  let cursorY = 96;
 
-  autoTable(doc, {
-    startY: 104,
-    head: [["Rate", "Present", "Absent", "Late", "Total"]],
-    body: [[
-      `${stats.rate}%`,
-      String(stats.present),
-      String(stats.absent),
-      String(stats.late),
-      String(stats.total),
-    ]],
-    theme: "grid",
-    styles: { fontSize: 10, halign: "center" },
-    headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
-  });
-
-  const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
-  if (sorted.length > 0) {
-    const startY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+  if (t.sections.stats) {
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`Daily Attendance (${stats.total} days)`, 40, startY);
+    doc.text("Attendance Summary", 40, cursorY);
     autoTable(doc, {
-      startY: startY + 8,
-      head: [["Date", "Status"]],
-      body: sorted.map(([d, s]) => [d, s.charAt(0).toUpperCase() + s.slice(1)]),
-      theme: "striped",
-      styles: { fontSize: 9 },
+      startY: cursorY + 8,
+      head: [["Rate", "Present", "Absent", "Late", "Total"]],
+      body: [[
+        `${stats.rate}%`,
+        String(stats.present),
+        String(stats.absent),
+        String(stats.late),
+        String(stats.total),
+      ]],
+      theme: "grid",
+      styles: { fontSize: 10, halign: "center" },
       headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
-      columnStyles: { 0: { cellWidth: 100 } },
     });
+    cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
   }
 
-  if (remarks.length > 0) {
-    const startY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+  const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
+  if (t.sections.daily && sorted.length > 0) {
+    const cols = t.attendanceColumns;
+    const head: string[] = [];
+    if (cols.date) head.push("Date");
+    if (cols.status) head.push("Status");
+    if (cols.remarks) head.push("Remarks");
+    if (head.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Daily Attendance (${stats.total} days)`, 40, cursorY);
+      const remarksMap = cols.remarks ? remarksByDate(remarks) : new Map<string, string>();
+      autoTable(doc, {
+        startY: cursorY + 8,
+        head: [head],
+        body: sorted.map(([d, s]) => {
+          const row: string[] = [];
+          if (cols.date) row.push(d);
+          if (cols.status) row.push(s.charAt(0).toUpperCase() + s.slice(1));
+          if (cols.remarks) row.push(remarksMap.get(d) ?? "");
+          return row;
+        }),
+        theme: "striped",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
+        columnStyles: cols.date ? { 0: { cellWidth: 100 } } : undefined,
+      });
+      cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+    }
+  }
+
+  if (t.sections.remarks && remarks.length > 0) {
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`Teacher Remarks (${remarks.length})`, 40, startY);
+    doc.text(`Teacher Remarks (${remarks.length})`, 40, cursorY);
     autoTable(doc, {
-      startY: startY + 8,
+      startY: cursorY + 8,
       head: [["Date", "Tag", "Remark"]],
       body: remarks.map((r) => [
         format(parseISO(r.date), "MMM dd, HH:mm"),
@@ -232,23 +286,41 @@ function buildPdf(props: StudentExportActionsProps): jsPDF {
   return doc;
 }
 
-function buildHtmlFallback({
-  studentName, rollNo, stats, dailyStatus, remarks,
-}: Pick<StudentExportActionsProps, "studentName" | "rollNo" | "stats" | "dailyStatus" | "remarks">) {
+function buildHtmlFallback(props: Pick<StudentExportActionsProps, "studentName" | "rollNo" | "stats" | "dailyStatus" | "remarks">) {
+  const { studentName, rollNo, stats, dailyStatus, remarks } = props;
+  const t = exportTemplatesStore.get().htmlFallback;
   const sorted = Array.from(dailyStatus.entries()).sort(([a], [b]) => a.localeCompare(b));
   const dateRange = sorted.length
     ? `${sorted[0][0]} to ${sorted[sorted.length - 1][0]}`
     : "No data";
-  const rows = sorted.map(([d, s]) => `<tr><td>${d}</td><td>${s}</td></tr>`).join("");
+  const cols = t.attendanceColumns;
+  const remarksMap = cols.remarks ? remarksByDate(remarks) : new Map<string, string>();
+  const dailyHeader = [
+    cols.date ? "<th>Date</th>" : "",
+    cols.status ? "<th>Status</th>" : "",
+    cols.remarks ? "<th>Remarks</th>" : "",
+  ].join("");
+  const rows = sorted.map(([d, s]) => {
+    const cells = [
+      cols.date ? `<td>${d}</td>` : "",
+      cols.status ? `<td>${s}</td>` : "",
+      cols.remarks ? `<td>${remarksMap.get(d) ?? ""}</td>` : "",
+    ].join("");
+    return `<tr>${cells}</tr>`;
+  }).join("");
   const remarkRows = remarks
     .map((r) => `<tr><td>${format(parseISO(r.date), "MMM dd, HH:mm")}</td><td>${TAG_LABELS[r.tag]}</td><td>${r.text}</td></tr>`)
     .join("");
+  const idBits: string[] = [];
+  if (t.identity.rollNo) idBits.push(`Roll No: ${rollNo}`);
+  if (t.identity.admissionNo) idBits.push(`Admission: ${rollNo}`);
+  idBits.push(`Range: ${dateRange}`);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${studentName} Report</title>
 <style>body{font-family:system-ui,Arial,sans-serif;margin:40px;color:#222}table{border-collapse:collapse;width:100%;margin:8px 0}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5}</style>
-</head><body><h1>${studentName}</h1><p>Roll No: ${rollNo} • Range: ${dateRange}</p>
-<h2>Attendance Summary</h2><p>Rate: ${stats.rate}% • Present: ${stats.present} • Absent: ${stats.absent} • Late: ${stats.late} • Total: ${stats.total}</p>
-<h2>Daily Attendance</h2><table><tr><th>Date</th><th>Status</th></tr>${rows}</table>
-${remarks.length ? `<h2>Remarks</h2><table><tr><th>Date</th><th>Tag</th><th>Remark</th></tr>${remarkRows}</table>` : ""}
+</head><body><h1>${t.identity.name ? studentName : "Student Report"}</h1><p>${idBits.join(" • ")}</p>
+${t.sections.stats ? `<h2>Attendance Summary</h2><p>Rate: ${stats.rate}% • Present: ${stats.present} • Absent: ${stats.absent} • Late: ${stats.late} • Total: ${stats.total}</p>` : ""}
+${t.sections.daily && dailyHeader ? `<h2>Daily Attendance</h2><table><tr>${dailyHeader}</tr>${rows}</table>` : ""}
+${t.sections.remarks && remarks.length ? `<h2>Remarks</h2><table><tr><th>Date</th><th>Tag</th><th>Remark</th></tr>${remarkRows}</table>` : ""}
 </body></html>`;
 }
 
@@ -259,7 +331,6 @@ function exportPDF(props: StudentExportActionsProps) {
     recordAudit("pdf", props);
     return { ok: true as const, fallback: false };
   } catch (err) {
-    // Fallback: download an HTML report the user can open and print
     const html = buildHtmlFallback(props);
     const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
     downloadBlob(blob, safeFilename(props.studentName, "html"));
@@ -274,6 +345,7 @@ function exportHTML(props: StudentExportActionsProps) {
   downloadBlob(blob, safeFilename(props.studentName, "html"));
   recordAudit("htmlFallback", props, false);
 }
+
 
 interface ExportError {
   kind: ExportKind;
