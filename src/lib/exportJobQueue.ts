@@ -140,7 +140,7 @@ class ExportJobQueueImpl {
           } else {
             next.job.status = "succeeded";
             next.job.progress = 1;
-            next.job.bytes = result?.bytes;
+            next.job.bytes = result && typeof result === "object" ? result.bytes : undefined;
           }
         } catch (err) {
           next.job.status = next.cancelled ? "cancelled" : "failed";
