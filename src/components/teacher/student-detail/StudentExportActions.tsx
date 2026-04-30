@@ -20,8 +20,10 @@ import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 import { auditLogStore } from "@/lib/exportAuditLog";
 import { exportTemplatesStore, type ExportTemplate } from "@/lib/exportTemplates";
 import { validateStudentExport, formatValidationMessage } from "@/lib/exportValidation";
+import { exportJobQueue, yieldToBrowser, chunkProgress } from "@/lib/exportJobQueue";
+import { runInWorker } from "@/lib/exportWorkerClient";
 
-/** Hard timeout for synchronous export work, ms. */
+/** Hard timeout retained only for synchronous validation paths. */
 const EXPORT_TIMEOUT_MS = 15_000;
 
 type ExportKind = "csv" | "pdf" | "htmlFallback";
