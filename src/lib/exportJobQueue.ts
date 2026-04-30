@@ -51,6 +51,8 @@ interface QueuedItem {
   job: ExportJob;
   runner: JobRunner;
   cancelled: boolean;
+  /** Whether this job can be retried after failure (true unless the runner is single-use). */
+  retryable: boolean;
 }
 
 type Listener = (jobs: ExportJob[]) => void;
