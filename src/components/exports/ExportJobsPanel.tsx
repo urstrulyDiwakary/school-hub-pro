@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,8 @@ function StatusIcon({ job }: { job: ExportJob }) {
 function JobCard({ job }: { job: ExportJob }) {
   const KindIcon = KIND_ICON[job.kind];
   const isActive = job.status === "running" || job.status === "queued";
+  const canRetry =
+    (job.status === "failed" || job.status === "cancelled") && job.retryable !== false;
   const progressPct = Math.round(job.progress * 100);
 
   return (
@@ -62,10 +64,15 @@ function JobCard({ job }: { job: ExportJob }) {
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
               {KIND_LABEL[job.kind]}
             </Badge>
+            {(job.retries ?? 0) > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                Retry {job.retries}
+              </Badge>
+            )}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusIcon job={job} />
-            <span>
+            <span className="truncate">
               {job.status === "queued" && "Queued"}
               {job.status === "running" && (job.step ?? "Working…")}
               {job.status === "succeeded" && `Done in ${formatDuration(job)}`}
@@ -74,19 +81,34 @@ function JobCard({ job }: { job: ExportJob }) {
             </span>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 -mr-1 -mt-1"
-          onClick={() => {
-            if (isActive) exportJobQueue.cancel(job.id);
-            else exportJobQueue.clear(job.id);
-          }}
-          aria-label={isActive ? "Cancel export" : "Dismiss"}
-        >
-          <X className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-0.5 -mr-1 -mt-1">
+          {canRetry && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => exportJobQueue.retry(job.id)}
+              aria-label="Retry export"
+              title="Retry with same parameters"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => {
+              if (isActive) exportJobQueue.cancel(job.id);
+              else exportJobQueue.clear(job.id);
+            }}
+            aria-label={isActive ? "Cancel export" : "Dismiss"}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       {isActive && (
         <Progress value={progressPct} className="mt-2 h-1.5" />

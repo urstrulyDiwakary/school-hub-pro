@@ -36,6 +36,10 @@ export interface ExportJob {
   error?: string;
   /** Result file size in bytes when succeeded. */
   bytes?: number;
+  /** Whether the queue can re-run this job (re-enqueue with the same runner). */
+  retryable?: boolean;
+  /** Number of times this job has been retried. */
+  retries?: number;
 }
 
 export type JobRunner = (
@@ -51,6 +55,8 @@ interface QueuedItem {
   job: ExportJob;
   runner: JobRunner;
   cancelled: boolean;
+  /** Whether this job can be retried after failure (true unless the runner is single-use). */
+  retryable: boolean;
 }
 
 type Listener = (jobs: ExportJob[]) => void;
@@ -75,21 +81,49 @@ class ExportJobQueueImpl {
     this.listeners.forEach((cb) => cb(snap));
   }
 
-  enqueue(kind: ExportJobKind, label: string, runner: JobRunner): string {
+  enqueue(kind: ExportJobKind, label: string, runner: JobRunner, opts?: { retryable?: boolean }): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const retryable = opts?.retryable !== false;
     this.items.push({
       job: {
         id, kind, label,
         status: "queued",
         progress: 0,
         startedAt: Date.now(),
+        retryable,
+        retries: 0,
       },
       runner,
       cancelled: false,
+      retryable,
     });
     this.notify();
     void this.tick();
     return id;
+  }
+
+  /**
+   * Re-run a failed (or cancelled) job using the SAME runner closure, which
+   * captured the original parameters and template snapshot at enqueue time.
+   * The job is reset in place — same id, incremented retries counter — so the
+   * UI keeps a stable card and history.
+   */
+  retry(id: string): boolean {
+    const item = this.items.find((i) => i.job.id === id);
+    if (!item) return false;
+    if (!item.retryable) return false;
+    if (item.job.status !== "failed" && item.job.status !== "cancelled") return false;
+    item.cancelled = false;
+    item.job.status = "queued";
+    item.job.progress = 0;
+    item.job.error = undefined;
+    item.job.step = undefined;
+    item.job.finishedAt = undefined;
+    item.job.startedAt = Date.now();
+    item.job.retries = (item.job.retries ?? 0) + 1;
+    this.notify();
+    void this.tick();
+    return true;
   }
 
   cancel(id: string) {
