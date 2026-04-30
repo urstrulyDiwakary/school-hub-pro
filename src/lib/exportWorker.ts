@@ -18,7 +18,7 @@ export interface WorkerStudentInput {
   studentName: string;
   rollNo: string;
   /** Already-sorted [date, status] pairs. */
-  daily: Array<[string, "present" | "absent" | "late"]>;
+  daily: Array<[string, string]>;
   stats: { rate: number; present: number; absent: number; late: number; total: number };
   remarks: Array<{ date: string; tag: string; text: string }>;
   template: {
