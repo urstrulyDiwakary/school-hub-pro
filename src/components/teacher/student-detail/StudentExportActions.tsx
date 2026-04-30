@@ -398,7 +398,6 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
           .sort(([a], [b]) => a.localeCompare(b)) as Array<[string, AttendanceStatus]>;
 
         if (kind === "csv") {
-          // Off-thread CSV generation.
           report(0.1, "Building CSV");
           const payload = {
             studentName: props.studentName,
@@ -412,18 +411,24 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
           try {
             csv = await runInWorker({ kind: "csv", payload, onProgress: (v, s) => report(0.1 + v * 0.85, s) });
           } catch {
-            // Fall back to main-thread synchronous build.
             csv = buildCsv(props);
             report(0.95, "Built on main thread");
           }
           throwIfCancelled();
-          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-          downloadBlob(blob, safeFilename(props.studentName, "csv"));
-          recordAudit("csv", props);
-          report(1, "Downloaded");
-          toast.success("CSV downloaded");
-          setBusy((b) => (b === kind ? null : b));
-          return { bytes: blob.size };
+          try {
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "csv"));
+            recordAudit("csv", props);
+            report(1, "Downloaded");
+            toast.success("CSV downloaded");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err) {
+            toast.error("Failed to generate CSV");
+            setError({ kind, message: "Failed to generate CSV" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err;
+          }
         }
 
         if (kind === "htmlFallback") {
@@ -444,17 +449,23 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
             report(0.95, "Built on main thread");
           }
           throwIfCancelled();
-          const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
-          downloadBlob(blob, safeFilename(props.studentName, "html"));
-          recordAudit("htmlFallback", props, false);
-          report(1, "Downloaded");
-          toast.success("HTML downloaded");
-          setBusy((b) => (b === kind ? null : b));
-          return { bytes: blob.size };
+          try {
+            const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "html"));
+            recordAudit("htmlFallback", props, false);
+            report(1, "Downloaded");
+            toast.success("HTML downloaded");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err) {
+            toast.error("Failed to generate HTML");
+            setError({ kind, message: "Failed to generate HTML" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err;
+          }
         }
 
-        // PDF — must run on main thread (jsPDF needs DOM). Chunk by section
-        // with yields between each so the UI stays responsive.
+        // PDF — DOM-bound; chunk with yields so the UI stays interactive.
         try {
           report(0.1, "Building header");
           await yieldToBrowser();
@@ -468,33 +479,27 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
           toast.success("PDF downloaded");
           setBusy((b) => (b === kind ? null : b));
           return { bytes: undefined };
-        } catch (err) {
-          // PDF failed — fall back to HTML
-          const html = buildHtmlFallback(props);
-          const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
-          downloadBlob(blob, safeFilename(props.studentName, "html"));
-          recordAudit("htmlFallback", props, true);
-          toast.warning("PDF failed — downloaded HTML fallback");
-          setBusy((b) => (b === kind ? null : b));
-          return { bytes: blob.size };
+        } catch {
+          // PDF failed — try HTML fallback
+          try {
+            const html = buildHtmlFallback(props);
+            const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "html"));
+            recordAudit("htmlFallback", props, true);
+            toast.warning("PDF generation failed — downloaded HTML report as fallback");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err2) {
+            toast.error("Failed to generate report");
+            setError({ kind, message: "Failed to generate report" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err2;
+          }
         }
       });
 
-      // The queue runs async in the background; clear the button-busy flag
-      // once the job leaves the queued state. We poll briefly via subscribe.
-      const unsub = exportJobQueue.subscribe((jobs) => {
-        const mine = [...jobs].reverse().find((j) => j.label === label);
-        if (mine && (mine.status === "succeeded" || mine.status === "failed" || mine.status === "cancelled")) {
-          if (mine.status === "failed") {
-            const message = mine.error ?? "Export failed";
-            setError({ kind, message });
-          }
-          setBusy((b) => (b === kind ? null : b));
-          unsub();
-        }
-      });
-      // Safety: drop the busy flag immediately so the dropdown re-enables
-      // — the global panel takes over the long-running indicator.
+      // Drop the inline busy flag — the global jobs panel owns the long-
+      // running spinner from here on. The dropdown re-enables immediately.
       setBusy(null);
       void EXPORT_TIMEOUT_MS;
     },
