@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { RotateCcw, Save, ShieldAlert } from "lucide-react";
+import { RotateCcw, Save, ShieldAlert, Sparkles } from "lucide-react";
 import {
   exportTemplatesStore,
   DEFAULT_EXPORT_TEMPLATES,
@@ -16,6 +16,7 @@ import {
   type AttendanceColumn,
   type ReportSection,
 } from "@/lib/exportTemplates";
+import { EXPORT_PRESETS } from "@/lib/exportPresets";
 import { resolveEffectivePermissions } from "@/lib/userRole";
 
 type FormatKey = "csv" | "pdf" | "htmlFallback";
@@ -60,6 +61,31 @@ function TemplateEditor({
 
   return (
     <div className="space-y-6">
+      <section className="space-y-2 rounded-lg border bg-muted/30 p-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <h3 className="text-sm font-semibold">Quick presets</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Apply a curated configuration to {FORMAT_LABEL[format]}, then fine-tune below.
+        </p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {EXPORT_PRESETS.map((preset) => (
+            <Button
+              key={preset.id}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              title={preset.description}
+              onClick={() => onChange(preset.build())}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      </section>
+
       <section className="space-y-3">
         <div>
           <h3 className="text-sm font-semibold">Identity fields</h3>

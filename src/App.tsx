@@ -35,6 +35,7 @@ import ExportConfig from "./pages/ExportConfig";
 import ExportAuditLog from "./pages/ExportAuditLog";
 import ExportTemplates from "./pages/ExportTemplates";
 import NotFound from "./pages/NotFound";
+import ExportJobsPanel from "./components/exports/ExportJobsPanel";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ExportJobsPanel />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/login" replace />} />

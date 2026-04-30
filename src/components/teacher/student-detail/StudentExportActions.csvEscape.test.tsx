@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import StudentExportActions from "./StudentExportActions";
 import type { AttendanceStatus } from "@/data/teacherData";
@@ -73,6 +73,7 @@ async function triggerCsv(
   await user.click(screen.getByRole("button", { name: /export/i }));
   await user.click(await screen.findByRole("menuitem", { name: /download csv/i }));
   await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
+  await waitFor(() => expect(capturedCsv).toContain("Student"), { timeout: 2000 });
 }
 
 // --- Tests ---------------------------------------------------------------

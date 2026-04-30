@@ -20,8 +20,10 @@ import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 import { auditLogStore } from "@/lib/exportAuditLog";
 import { exportTemplatesStore, type ExportTemplate } from "@/lib/exportTemplates";
 import { validateStudentExport, formatValidationMessage } from "@/lib/exportValidation";
+import { exportJobQueue, yieldToBrowser, chunkProgress } from "@/lib/exportJobQueue";
+import { runInWorker } from "@/lib/exportWorkerClient";
 
-/** Hard timeout for synchronous export work, ms. */
+/** Hard timeout retained only for synchronous validation paths. */
 const EXPORT_TIMEOUT_MS = 15_000;
 
 type ExportKind = "csv" | "pdf" | "htmlFallback";
@@ -371,8 +373,7 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
 
       lastAttempt.current = kind;
 
-      // Pre-flight validation — for CSV especially, surface specific issues
-      // before generating an invalid file.
+      // Pre-flight validation — surface specific issues before queueing.
       const validation = validateStudentExport(props);
       if (!validation.ok) {
         const message = formatValidationMessage(validation);
@@ -386,41 +387,121 @@ export default function StudentExportActions(props: StudentExportActionsProps) {
 
       setBusy(kind);
       setError(null);
-      try {
+
+      const label = `${props.studentName} — ${kind === "csv" ? "CSV" : kind === "pdf" ? "PDF" : "HTML"}`;
+      const jobKind = kind === "htmlFallback" ? "htmlFallback" : kind;
+
+      exportJobQueue.enqueue(jobKind, label, async ({ report, throwIfCancelled }) => {
+        report(0.05, "Preparing data");
+        const tpl = exportTemplatesStore.get();
+        const sortedDaily = Array.from(props.dailyStatus.entries())
+          .sort(([a], [b]) => a.localeCompare(b)) as Array<[string, AttendanceStatus]>;
+
         if (kind === "csv") {
-          await withTimeout(() => exportCSV(props), EXPORT_TIMEOUT_MS);
-          toast.success("CSV downloaded");
-        } else if (kind === "pdf") {
-          const result = await withTimeout(() => exportPDF(props), EXPORT_TIMEOUT_MS);
-          if (result.fallback) {
-            toast.warning("PDF generation failed — downloaded HTML report as fallback");
-          } else {
-            toast.success("PDF downloaded");
+          report(0.1, "Building CSV");
+          const payload = {
+            studentName: props.studentName,
+            rollNo: props.rollNo,
+            daily: sortedDaily,
+            stats: props.stats,
+            remarks: props.remarks.map((r) => ({ date: r.date, tag: TAG_LABELS[r.tag], text: r.text })),
+            template: tpl.csv,
+          };
+          let csv: string;
+          try {
+            csv = await runInWorker({ kind: "csv", payload, onProgress: (v, s) => report(0.1 + v * 0.85, s) });
+          } catch {
+            csv = buildCsv(props);
+            report(0.95, "Built on main thread");
           }
-        } else {
-          await withTimeout(() => exportHTML(props), EXPORT_TIMEOUT_MS);
-          toast.success("HTML downloaded");
+          throwIfCancelled();
+          try {
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "csv"));
+            recordAudit("csv", props);
+            report(1, "Downloaded");
+            toast.success("CSV downloaded");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err) {
+            toast.error("Failed to generate CSV");
+            setError({ kind, message: "Failed to generate CSV" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err;
+          }
         }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        const isTimeout = message === "Export timed out";
-        const friendly =
-          kind === "csv"
-            ? isTimeout
-              ? "CSV export timed out"
-              : "Failed to generate CSV"
-            : kind === "pdf"
-              ? isTimeout
-                ? "PDF export timed out"
-                : "Failed to generate report"
-              : isTimeout
-                ? "HTML export timed out"
-                : "Failed to generate HTML";
-        toast.error(friendly);
-        setError({ kind, message: friendly });
-      } finally {
-        setBusy(null);
-      }
+
+        if (kind === "htmlFallback") {
+          report(0.1, "Building HTML");
+          const payload = {
+            studentName: props.studentName,
+            rollNo: props.rollNo,
+            daily: sortedDaily,
+            stats: props.stats,
+            remarks: props.remarks.map((r) => ({ date: r.date, tag: TAG_LABELS[r.tag], text: r.text })),
+            template: tpl.htmlFallback,
+          };
+          let html: string;
+          try {
+            html = await runInWorker({ kind: "html", payload, onProgress: (v, s) => report(0.1 + v * 0.85, s) });
+          } catch {
+            html = buildHtmlFallback(props);
+            report(0.95, "Built on main thread");
+          }
+          throwIfCancelled();
+          try {
+            const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "html"));
+            recordAudit("htmlFallback", props, false);
+            report(1, "Downloaded");
+            toast.success("HTML downloaded");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err) {
+            toast.error("Failed to generate HTML");
+            setError({ kind, message: "Failed to generate HTML" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err;
+          }
+        }
+
+        // PDF — DOM-bound; chunk with yields so the UI stays interactive.
+        try {
+          report(0.1, "Building header");
+          await yieldToBrowser();
+          throwIfCancelled();
+          const doc = buildPdf(props);
+          report(0.85, "Saving file");
+          await yieldToBrowser();
+          doc.save(safeFilename(props.studentName, "pdf"));
+          recordAudit("pdf", props);
+          report(1, "Downloaded");
+          toast.success("PDF downloaded");
+          setBusy((b) => (b === kind ? null : b));
+          return { bytes: undefined };
+        } catch {
+          // PDF failed — try HTML fallback
+          try {
+            const html = buildHtmlFallback(props);
+            const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+            downloadBlob(blob, safeFilename(props.studentName, "html"));
+            recordAudit("htmlFallback", props, true);
+            toast.warning("PDF generation failed — downloaded HTML report as fallback");
+            setBusy((b) => (b === kind ? null : b));
+            return { bytes: blob.size };
+          } catch (err2) {
+            toast.error("Failed to generate report");
+            setError({ kind, message: "Failed to generate report" });
+            setBusy((b) => (b === kind ? null : b));
+            throw err2;
+          }
+        }
+      });
+
+      // Drop the inline busy flag — the global jobs panel owns the long-
+      // running spinner from here on. The dropdown re-enables immediately.
+      setBusy(null);
+      void EXPORT_TIMEOUT_MS;
     },
     [props],
   );

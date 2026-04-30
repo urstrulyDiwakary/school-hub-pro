@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { exportCombinedPdf, type CombinedStudentInput } from "@/lib/combinedExport";
+import { exportJobQueue, yieldToBrowser } from "@/lib/exportJobQueue";
 import { resolveEffectivePermissions } from "@/lib/userRole";
 
 interface CombinedExportDialogProps {
@@ -54,8 +55,25 @@ export default function CombinedExportDialog({ open, onOpenChange, students }: C
 
     setBusy(true);
     try {
-      const result = exportCombinedPdf({ students, fromDate, toDate }, "admin");
-      toast.success(`Combined PDF downloaded — ${result.studentCount} students, ${result.pages} pages`);
+      const label = `Combined report — ${students.length} student${students.length === 1 ? "" : "s"}`;
+      exportJobQueue.enqueue("combined-pdf", label, async ({ report, throwIfCancelled }) => {
+        report(0.05, "Preparing roster");
+        await yieldToBrowser();
+        throwIfCancelled();
+        // Yield between fractional milestones so the panel updates.
+        const total = students.length;
+        for (let i = 0; i < total; i += 1) {
+          throwIfCancelled();
+          report(0.1 + (i / total) * 0.7, `Compiling student ${i + 1} of ${total}`);
+          // eslint-disable-next-line no-await-in-loop
+          if (i % 5 === 0) await yieldToBrowser();
+        }
+        report(0.85, "Rendering PDF");
+        await yieldToBrowser();
+        const result = exportCombinedPdf({ students, fromDate, toDate }, "admin");
+        report(1, `Done — ${result.pages} pages`);
+        toast.success(`Combined PDF downloaded — ${result.studentCount} students, ${result.pages} pages`);
+      });
       onOpenChange(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to generate combined report";
