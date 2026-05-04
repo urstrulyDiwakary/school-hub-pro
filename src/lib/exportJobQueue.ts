@@ -40,6 +40,18 @@ export interface ExportJob {
   retryable?: boolean;
   /** Number of times this job has been retried. */
   retries?: number;
+  /** Maximum number of retry attempts allowed for this job. */
+  maxRetries?: number;
+  /** The very first failure reason for this job (preserved across retries). */
+  firstError?: string;
+  /** Timestamp of the first failure. */
+  firstFailedAt?: number;
+  /** The most recent failure reason (cleared only when the job succeeds). */
+  lastError?: string;
+  /** Timestamp of the most recent failure. */
+  lastFailedAt?: number;
+  /** When set, an auto-retry is scheduled to run at this timestamp (epoch ms). */
+  nextRetryAt?: number;
 }
 
 export type JobRunner = (
