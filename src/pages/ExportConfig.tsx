@@ -30,10 +30,16 @@ export default function ExportConfig() {
 
   const [draft, setDraft] = useState<SchoolExportConfig>(() => exportConfigStore.get());
   const [dirty, setDirty] = useState(false);
+  const [settings, setSettings] = useState<ExportSettings>(() => exportSettingsStore.get());
+  const [settingsDirty, setSettingsDirty] = useState(false);
 
   useEffect(() => exportConfigStore.subscribe(() => {
     if (!dirty) setDraft(exportConfigStore.get());
   }), [dirty]);
+
+  useEffect(() => exportSettingsStore.subscribe(() => {
+    if (!settingsDirty) setSettings(exportSettingsStore.get());
+  }), [settingsDirty]);
 
   if (!isAdmin) {
     return (
