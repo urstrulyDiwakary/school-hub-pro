@@ -47,42 +47,78 @@ function StatusIcon({ job }: { job: ExportJob }) {
   return <Ban className="h-4 w-4 text-muted-foreground" />;
 }
 
+function formatTimestamp(ts: number): string {
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
 function JobCard({ job }: { job: ExportJob }) {
   const KindIcon = KIND_ICON[job.kind];
   const isActive = job.status === "running" || job.status === "queued";
-  const canRetry =
-    (job.status === "failed" || job.status === "cancelled") && job.retryable !== false;
+  const isFailedOrCancelled = job.status === "failed" || job.status === "cancelled";
+  const retries = job.retries ?? 0;
+  const maxRetries = job.maxRetries ?? 0;
+  const retriesExhausted = retries >= maxRetries;
+  const canRetry = isFailedOrCancelled && job.retryable !== false && !retriesExhausted;
   const progressPct = Math.round(job.progress * 100);
+  const showFailureDetail = job.status === "failed" && (job.firstError || job.lastError);
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-md">
       <div className="flex items-start gap-2">
         <KindIcon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-medium truncate">{job.label}</p>
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
               {KIND_LABEL[job.kind]}
             </Badge>
-            {(job.retries ?? 0) > 0 && (
+            {retries > 0 && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-                Retry {job.retries}
+                Retry {retries}/{maxRetries}
               </Badge>
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusIcon job={job} />
             <span className="truncate">
-              {job.status === "queued" && "Queued"}
+              {job.status === "queued" && (job.nextRetryAt
+                ? `Retrying in ${Math.max(0, Math.ceil((job.nextRetryAt - Date.now()) / 1000))}s`
+                : "Queued")}
               {job.status === "running" && (job.step ?? "Working…")}
               {job.status === "succeeded" && `Done in ${formatDuration(job)}`}
               {job.status === "failed" && (job.error ?? "Failed")}
               {job.status === "cancelled" && "Cancelled"}
             </span>
           </div>
+          {showFailureDetail && (
+            <div className="mt-1.5 rounded border border-destructive/30 bg-destructive/5 px-2 py-1 text-[11px] leading-snug">
+              {job.firstError && (
+                <div className="text-muted-foreground">
+                  <span className="font-medium text-foreground">Original failure:</span>{" "}
+                  {job.firstError}
+                  {job.firstFailedAt ? ` (${formatTimestamp(job.firstFailedAt)})` : ""}
+                </div>
+              )}
+              {job.lastFailedAt && retries > 0 && (
+                <div className="text-muted-foreground">
+                  <span className="font-medium text-foreground">Last failure:</span>{" "}
+                  {formatTimestamp(job.lastFailedAt)}
+                </div>
+              )}
+              {retriesExhausted && (
+                <div className="text-destructive font-medium">
+                  Retry limit reached ({maxRetries}).
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-0.5 -mr-1 -mt-1">
-          {canRetry && (
+          {isFailedOrCancelled && job.retryable !== false && (
             <Button
               type="button"
               variant="ghost"
@@ -90,7 +126,8 @@ function JobCard({ job }: { job: ExportJob }) {
               className="h-6 w-6"
               onClick={() => exportJobQueue.retry(job.id)}
               aria-label="Retry export"
-              title="Retry with same parameters"
+              title={canRetry ? "Retry with same parameters" : `Retry limit reached (${maxRetries})`}
+              disabled={!canRetry}
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
