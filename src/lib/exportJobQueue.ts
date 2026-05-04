@@ -69,6 +69,24 @@ interface QueuedItem {
   cancelled: boolean;
   /** Whether this job can be retried after failure (true unless the runner is single-use). */
   retryable: boolean;
+  /** Maximum retry attempts before giving up. */
+  maxRetries: number;
+  /** Pending auto-retry timer, if any. */
+  retryTimer?: ReturnType<typeof setTimeout>;
+}
+
+/** Default cap on automatic retries. Manual retries beyond this are blocked too. */
+export const DEFAULT_MAX_RETRIES = 3;
+
+/**
+ * Compute exponential backoff delay (ms) for the Nth retry attempt.
+ * attempt is 1-indexed: 1 => ~1s, 2 => ~2s, 3 => ~4s, capped at 30s.
+ * A small jitter avoids thundering herd if many jobs fail simultaneously.
+ */
+export function computeBackoffMs(attempt: number, baseMs = 1000, capMs = 30_000): number {
+  const exp = Math.min(capMs, baseMs * Math.pow(2, Math.max(0, attempt - 1)));
+  const jitter = Math.random() * 0.25 * exp;
+  return Math.round(exp + jitter);
 }
 
 type Listener = (jobs: ExportJob[]) => void;
