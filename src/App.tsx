@@ -36,6 +36,13 @@ import ExportAuditLog from "./pages/ExportAuditLog";
 import ExportTemplates from "./pages/ExportTemplates";
 import NotFound from "./pages/NotFound";
 import ExportJobsPanel from "./components/exports/ExportJobsPanel";
+import { exportJobQueue } from "./lib/exportJobQueue";
+
+// Restore any persisted failed-job history once at module load so the panel
+// shows previous failures (with timestamps + error reasons) after a reload.
+if (typeof window !== "undefined") {
+  exportJobQueue.restoreFromStorage();
+}
 
 const queryClient = new QueryClient();
 
