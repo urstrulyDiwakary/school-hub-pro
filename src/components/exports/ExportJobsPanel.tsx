@@ -56,7 +56,31 @@ function formatTimestamp(ts: number): string {
   }
 }
 
-function JobCard({ job }: { job: ExportJob }) {
+function buildErrorClipboardText(job: ExportJob): string {
+  const lines: string[] = [
+    `Export job: ${job.label}`,
+    `Format: ${KIND_LABEL[job.kind]}`,
+    `Job ID: ${job.id}`,
+  ];
+  if (job.firstError) {
+    lines.push(
+      `Original failure: ${job.firstError}` +
+        (job.firstFailedAt ? ` (${new Date(job.firstFailedAt).toISOString()})` : ""),
+    );
+  }
+  if (job.lastError && job.lastError !== job.firstError) {
+    lines.push(
+      `Last failure: ${job.lastError}` +
+        (job.lastFailedAt ? ` (${new Date(job.lastFailedAt).toISOString()})` : ""),
+    );
+  } else if (job.lastFailedAt && (job.retries ?? 0) > 0) {
+    lines.push(`Last failure at: ${new Date(job.lastFailedAt).toISOString()}`);
+  }
+  lines.push(`Retries: ${job.retries ?? 0}/${job.maxRetries ?? 0}`);
+  return lines.join("\n");
+}
+
+function JobCard({ job, now }: { job: ExportJob; now: number }) {
   const KindIcon = KIND_ICON[job.kind];
   const isActive = job.status === "running" || job.status === "queued";
   const isFailedOrCancelled = job.status === "failed" || job.status === "cancelled";
@@ -66,6 +90,36 @@ function JobCard({ job }: { job: ExportJob }) {
   const canRetry = isFailedOrCancelled && job.retryable !== false && !retriesExhausted;
   const progressPct = Math.round(job.progress * 100);
   const showFailureDetail = job.status === "failed" && (job.firstError || job.lastError);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const text = buildErrorClipboardText(job);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      toast.success("Error details copied");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  };
+
+  // Next-retry countdown details (computed against the live `now` tick).
+  const nextRetrySecs = job.nextRetryAt
+    ? Math.max(0, Math.ceil((job.nextRetryAt - now) / 1000))
+    : null;
+  const backoffMs = job.nextRetryAt && job.lastFailedAt
+    ? job.nextRetryAt - job.lastFailedAt
+    : null;
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-md">
@@ -86,8 +140,8 @@ function JobCard({ job }: { job: ExportJob }) {
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusIcon job={job} />
             <span className="truncate">
-              {job.status === "queued" && (job.nextRetryAt
-                ? `Retrying in ${Math.max(0, Math.ceil((job.nextRetryAt - Date.now()) / 1000))}s`
+              {job.status === "queued" && (nextRetrySecs !== null
+                ? `Auto-retry in ${nextRetrySecs}s`
                 : "Queued")}
               {job.status === "running" && (job.step ?? "Working…")}
               {job.status === "succeeded" && `Done in ${formatDuration(job)}`}
@@ -95,6 +149,14 @@ function JobCard({ job }: { job: ExportJob }) {
               {job.status === "cancelled" && "Cancelled"}
             </span>
           </div>
+          {job.status === "queued" && job.nextRetryAt && (
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Next attempt at <span className="font-medium text-foreground">{formatTimestamp(job.nextRetryAt)}</span>
+              {backoffMs !== null && (
+                <> · backoff {(backoffMs / 1000).toFixed(1)}s (with jitter)</>
+              )}
+            </div>
+          )}
           {showFailureDetail && (
             <div className="mt-1.5 rounded border border-destructive/30 bg-destructive/5 px-2 py-1 text-[11px] leading-snug">
               {job.firstError && (
@@ -119,6 +181,19 @@ function JobCard({ job }: { job: ExportJob }) {
           )}
         </div>
         <div className="flex items-center gap-0.5 -mr-1 -mt-1">
+          {job.status === "failed" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleCopy}
+              aria-label="Copy error details"
+              title="Copy failure reason and timestamps for support"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          )}
           {isFailedOrCancelled && job.retryable !== false && (
             <Button
               type="button"
