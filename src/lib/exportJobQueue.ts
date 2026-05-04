@@ -169,6 +169,7 @@ class ExportJobQueueImpl {
   private notify() {
     const snap = this.snapshot();
     this.listeners.forEach((cb) => cb(snap));
+    this.persistFailedHistory();
   }
 
   enqueue(
