@@ -179,7 +179,7 @@ class ExportJobQueueImpl {
   ): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const retryable = opts?.retryable !== false;
-    const maxRetries = Math.max(0, Math.floor(opts?.maxRetries ?? this.defaultMaxRetries));
+    const maxRetries = Math.max(0, Math.floor(opts?.maxRetries ?? this.getDefaultMaxRetries()));
     this.items.push({
       job: {
         id, kind, label,
