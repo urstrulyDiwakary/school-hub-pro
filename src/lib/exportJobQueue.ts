@@ -95,6 +95,16 @@ class ExportJobQueueImpl {
   private items: QueuedItem[] = [];
   private listeners = new Set<Listener>();
   private running = false;
+  /** Global default cap for new jobs that don't specify one. */
+  private defaultMaxRetries = DEFAULT_MAX_RETRIES;
+
+  /** Set the global default max-retry cap (admin-configurable). */
+  setDefaultMaxRetries(n: number) {
+    this.defaultMaxRetries = Math.max(0, Math.floor(n));
+  }
+  getDefaultMaxRetries(): number {
+    return this.defaultMaxRetries;
+  }
 
   subscribe(cb: Listener): () => void {
     this.listeners.add(cb);
@@ -111,9 +121,15 @@ class ExportJobQueueImpl {
     this.listeners.forEach((cb) => cb(snap));
   }
 
-  enqueue(kind: ExportJobKind, label: string, runner: JobRunner, opts?: { retryable?: boolean }): string {
+  enqueue(
+    kind: ExportJobKind,
+    label: string,
+    runner: JobRunner,
+    opts?: { retryable?: boolean; maxRetries?: number },
+  ): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const retryable = opts?.retryable !== false;
+    const maxRetries = Math.max(0, Math.floor(opts?.maxRetries ?? this.defaultMaxRetries));
     this.items.push({
       job: {
         id, kind, label,
@@ -122,33 +138,50 @@ class ExportJobQueueImpl {
         startedAt: Date.now(),
         retryable,
         retries: 0,
+        maxRetries,
       },
       runner,
       cancelled: false,
       retryable,
+      maxRetries,
     });
     this.notify();
     void this.tick();
     return id;
   }
 
+  /** Whether the job can be retried again (manually or automatically). */
+  canRetry(id: string): boolean {
+    const item = this.items.find((i) => i.job.id === id);
+    if (!item || !item.retryable) return false;
+    if (item.job.status !== "failed" && item.job.status !== "cancelled") return false;
+    return (item.job.retries ?? 0) < item.maxRetries;
+  }
+
   /**
    * Re-run a failed (or cancelled) job using the SAME runner closure, which
    * captured the original parameters and template snapshot at enqueue time.
    * The job is reset in place — same id, incremented retries counter — so the
-   * UI keeps a stable card and history.
+   * UI keeps a stable card and history. Preserves firstError/lastError so the
+   * panel can show the original failure reason and last failure timestamp.
    */
   retry(id: string): boolean {
     const item = this.items.find((i) => i.job.id === id);
     if (!item) return false;
     if (!item.retryable) return false;
     if (item.job.status !== "failed" && item.job.status !== "cancelled") return false;
+    if ((item.job.retries ?? 0) >= item.maxRetries) return false;
+    if (item.retryTimer) {
+      clearTimeout(item.retryTimer);
+      item.retryTimer = undefined;
+    }
     item.cancelled = false;
     item.job.status = "queued";
     item.job.progress = 0;
     item.job.error = undefined;
     item.job.step = undefined;
     item.job.finishedAt = undefined;
+    item.job.nextRetryAt = undefined;
     item.job.startedAt = Date.now();
     item.job.retries = (item.job.retries ?? 0) + 1;
     this.notify();
@@ -159,6 +192,11 @@ class ExportJobQueueImpl {
   cancel(id: string) {
     const item = this.items.find((i) => i.job.id === id);
     if (!item) return;
+    if (item.retryTimer) {
+      clearTimeout(item.retryTimer);
+      item.retryTimer = undefined;
+      item.job.nextRetryAt = undefined;
+    }
     if (item.job.status === "queued") {
       item.job.status = "cancelled";
       item.job.finishedAt = Date.now();
@@ -169,13 +207,33 @@ class ExportJobQueueImpl {
   }
 
   clear(id: string) {
+    const item = this.items.find((i) => i.job.id === id);
+    if (item?.retryTimer) clearTimeout(item.retryTimer);
     this.items = this.items.filter((i) => i.job.id !== id);
     this.notify();
   }
 
   clearFinished() {
-    this.items = this.items.filter((i) => i.job.status === "running" || i.job.status === "queued");
+    this.items = this.items.filter((i) => {
+      const keep = i.job.status === "running" || i.job.status === "queued";
+      if (!keep && i.retryTimer) clearTimeout(i.retryTimer);
+      return keep;
+    });
     this.notify();
+  }
+
+  private scheduleAutoRetry(item: QueuedItem) {
+    if (!item.retryable) return;
+    const attempt = (item.job.retries ?? 0) + 1;
+    if (attempt > item.maxRetries) return;
+    const delay = computeBackoffMs(attempt);
+    item.job.nextRetryAt = Date.now() + delay;
+    this.notify();
+    item.retryTimer = setTimeout(() => {
+      item.retryTimer = undefined;
+      // Only auto-retry if still in failed state and not user-cleared.
+      if (item.job.status === "failed") this.retry(item.job.id);
+    }, delay);
   }
 
   private async tick() {
@@ -205,13 +263,28 @@ class ExportJobQueueImpl {
             next.job.status = "succeeded";
             next.job.progress = 1;
             next.job.bytes = result && typeof result === "object" ? result.bytes : undefined;
+            // Successful run clears the lingering error context.
+            next.job.error = undefined;
           }
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
           next.job.status = next.cancelled ? "cancelled" : "failed";
-          next.job.error = err instanceof Error ? err.message : String(err);
+          next.job.error = message;
+          if (next.job.status === "failed") {
+            const now = Date.now();
+            next.job.lastError = message;
+            next.job.lastFailedAt = now;
+            if (next.job.firstError === undefined) {
+              next.job.firstError = message;
+              next.job.firstFailedAt = now;
+            }
+          }
         } finally {
           next.job.finishedAt = Date.now();
           this.notify();
+          if (next.job.status === "failed" && (next.job.retries ?? 0) < next.maxRetries) {
+            this.scheduleAutoRetry(next);
+          }
         }
       }
     } finally {
