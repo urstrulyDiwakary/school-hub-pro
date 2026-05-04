@@ -237,7 +237,18 @@ class ExportJobQueueImpl {
     item.job.retries = (item.job.retries ?? 0) + 1;
     this.notify();
     void this.tick();
-    return true;
+  }
+
+  /**
+   * Retry every failed job that is still eligible (retryable + under cap).
+   * Returns the number of jobs that were re-enqueued.
+   */
+  retryAllFailed(): number {
+    let count = 0;
+    for (const item of this.items) {
+      if (this.canRetry(item.job.id) && this.retry(item.job.id)) count += 1;
+    }
+    return count;
   }
 
   cancel(id: string) {
