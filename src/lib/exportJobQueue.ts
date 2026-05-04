@@ -17,6 +17,7 @@
  */
 
 import type { AttendanceStatus } from "@/data/teacherData";
+import { exportSettingsStore } from "./exportSettings";
 
 export type ExportJobKind = "csv" | "pdf" | "htmlFallback" | "combined-pdf";
 export type ExportJobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -91,19 +92,68 @@ export function computeBackoffMs(attempt: number, baseMs = 1000, capMs = 30_000)
 
 type Listener = (jobs: ExportJob[]) => void;
 
+/** localStorage key for persisted failed-job history (survives refresh). */
+const FAILED_HISTORY_KEY = "export-failed-history:v1";
+const MAX_PERSISTED_FAILURES = 25;
+
 class ExportJobQueueImpl {
   private items: QueuedItem[] = [];
   private listeners = new Set<Listener>();
   private running = false;
-  /** Global default cap for new jobs that don't specify one. */
-  private defaultMaxRetries = DEFAULT_MAX_RETRIES;
+  /** Per-instance override; falls back to the persisted admin setting. */
+  private defaultMaxRetriesOverride: number | null = null;
+  private restored = false;
 
   /** Set the global default max-retry cap (admin-configurable). */
   setDefaultMaxRetries(n: number) {
-    this.defaultMaxRetries = Math.max(0, Math.floor(n));
+    this.defaultMaxRetriesOverride = Math.max(0, Math.floor(n));
   }
   getDefaultMaxRetries(): number {
-    return this.defaultMaxRetries;
+    if (this.defaultMaxRetriesOverride !== null) return this.defaultMaxRetriesOverride;
+    return exportSettingsStore.get().defaultMaxRetries;
+  }
+
+  /**
+   * Restore failed-job history from localStorage. Restored jobs are NOT
+   * re-runnable (their runner closure is gone) but remain visible so users
+   * can see what failed and copy the error context for support.
+   */
+  restoreFromStorage() {
+    if (this.restored || typeof window === "undefined") return;
+    this.restored = true;
+    try {
+      const raw = window.localStorage.getItem(FAILED_HISTORY_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as ExportJob[];
+      if (!Array.isArray(parsed)) return;
+      for (const job of parsed) {
+        // Restored jobs cannot be retried — runner closure is lost on reload.
+        const restored: ExportJob = { ...job, status: "failed", retryable: false };
+        this.items.push({
+          job: restored,
+          runner: async () => { throw new Error("Cannot retry — page was reloaded after this failure"); },
+          cancelled: false,
+          retryable: false,
+          maxRetries: job.maxRetries ?? 0,
+        });
+      }
+      this.notify();
+    } catch {
+      // Corrupted history is non-fatal.
+    }
+  }
+
+  private persistFailedHistory() {
+    if (typeof window === "undefined") return;
+    const failed = this.items
+      .filter((i) => i.job.status === "failed")
+      .slice(-MAX_PERSISTED_FAILURES)
+      .map((i) => ({ ...i.job }));
+    try {
+      window.localStorage.setItem(FAILED_HISTORY_KEY, JSON.stringify(failed));
+    } catch {
+      // Quota errors are non-fatal.
+    }
   }
 
   subscribe(cb: Listener): () => void {
@@ -119,6 +169,7 @@ class ExportJobQueueImpl {
   private notify() {
     const snap = this.snapshot();
     this.listeners.forEach((cb) => cb(snap));
+    this.persistFailedHistory();
   }
 
   enqueue(
@@ -129,7 +180,7 @@ class ExportJobQueueImpl {
   ): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const retryable = opts?.retryable !== false;
-    const maxRetries = Math.max(0, Math.floor(opts?.maxRetries ?? this.defaultMaxRetries));
+    const maxRetries = Math.max(0, Math.floor(opts?.maxRetries ?? this.getDefaultMaxRetries()));
     this.items.push({
       job: {
         id, kind, label,
@@ -186,7 +237,18 @@ class ExportJobQueueImpl {
     item.job.retries = (item.job.retries ?? 0) + 1;
     this.notify();
     void this.tick();
-    return true;
+  }
+
+  /**
+   * Retry every failed job that is still eligible (retryable + under cap).
+   * Returns the number of jobs that were re-enqueued.
+   */
+  retryAllFailed(): number {
+    let count = 0;
+    for (const item of this.items) {
+      if (this.canRetry(item.job.id) && this.retry(item.job.id)) count += 1;
+    }
+    return count;
   }
 
   cancel(id: string) {

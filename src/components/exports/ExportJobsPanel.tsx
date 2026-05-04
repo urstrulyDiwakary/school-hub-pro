@@ -7,14 +7,15 @@
  * because it's mounted at the App root.
  */
 
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw, Copy, Check, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useExportJobs } from "@/hooks/useExportJobs";
 import { exportJobQueue, type ExportJob, type ExportJobKind } from "@/lib/exportJobQueue";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const KIND_ICON: Record<ExportJobKind, typeof FileText> = {
   csv: FileSpreadsheet,
@@ -55,7 +56,31 @@ function formatTimestamp(ts: number): string {
   }
 }
 
-function JobCard({ job }: { job: ExportJob }) {
+function buildErrorClipboardText(job: ExportJob): string {
+  const lines: string[] = [
+    `Export job: ${job.label}`,
+    `Format: ${KIND_LABEL[job.kind]}`,
+    `Job ID: ${job.id}`,
+  ];
+  if (job.firstError) {
+    lines.push(
+      `Original failure: ${job.firstError}` +
+        (job.firstFailedAt ? ` (${new Date(job.firstFailedAt).toISOString()})` : ""),
+    );
+  }
+  if (job.lastError && job.lastError !== job.firstError) {
+    lines.push(
+      `Last failure: ${job.lastError}` +
+        (job.lastFailedAt ? ` (${new Date(job.lastFailedAt).toISOString()})` : ""),
+    );
+  } else if (job.lastFailedAt && (job.retries ?? 0) > 0) {
+    lines.push(`Last failure at: ${new Date(job.lastFailedAt).toISOString()}`);
+  }
+  lines.push(`Retries: ${job.retries ?? 0}/${job.maxRetries ?? 0}`);
+  return lines.join("\n");
+}
+
+function JobCard({ job, now }: { job: ExportJob; now: number }) {
   const KindIcon = KIND_ICON[job.kind];
   const isActive = job.status === "running" || job.status === "queued";
   const isFailedOrCancelled = job.status === "failed" || job.status === "cancelled";
@@ -65,6 +90,36 @@ function JobCard({ job }: { job: ExportJob }) {
   const canRetry = isFailedOrCancelled && job.retryable !== false && !retriesExhausted;
   const progressPct = Math.round(job.progress * 100);
   const showFailureDetail = job.status === "failed" && (job.firstError || job.lastError);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const text = buildErrorClipboardText(job);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      toast.success("Error details copied");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  };
+
+  // Next-retry countdown details (computed against the live `now` tick).
+  const nextRetrySecs = job.nextRetryAt
+    ? Math.max(0, Math.ceil((job.nextRetryAt - now) / 1000))
+    : null;
+  const backoffMs = job.nextRetryAt && job.lastFailedAt
+    ? job.nextRetryAt - job.lastFailedAt
+    : null;
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-md">
@@ -85,8 +140,8 @@ function JobCard({ job }: { job: ExportJob }) {
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusIcon job={job} />
             <span className="truncate">
-              {job.status === "queued" && (job.nextRetryAt
-                ? `Retrying in ${Math.max(0, Math.ceil((job.nextRetryAt - Date.now()) / 1000))}s`
+              {job.status === "queued" && (nextRetrySecs !== null
+                ? `Auto-retry in ${nextRetrySecs}s`
                 : "Queued")}
               {job.status === "running" && (job.step ?? "Working…")}
               {job.status === "succeeded" && `Done in ${formatDuration(job)}`}
@@ -94,6 +149,14 @@ function JobCard({ job }: { job: ExportJob }) {
               {job.status === "cancelled" && "Cancelled"}
             </span>
           </div>
+          {job.status === "queued" && job.nextRetryAt && (
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Next attempt at <span className="font-medium text-foreground">{formatTimestamp(job.nextRetryAt)}</span>
+              {backoffMs !== null && (
+                <> · backoff {(backoffMs / 1000).toFixed(1)}s (with jitter)</>
+              )}
+            </div>
+          )}
           {showFailureDetail && (
             <div className="mt-1.5 rounded border border-destructive/30 bg-destructive/5 px-2 py-1 text-[11px] leading-snug">
               {job.firstError && (
@@ -118,6 +181,19 @@ function JobCard({ job }: { job: ExportJob }) {
           )}
         </div>
         <div className="flex items-center gap-0.5 -mr-1 -mt-1">
+          {job.status === "failed" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleCopy}
+              aria-label="Copy error details"
+              title="Copy failure reason and timestamps for support"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          )}
           {isFailedOrCancelled && job.retryable !== false && (
             <Button
               type="button"
@@ -157,19 +233,41 @@ function JobCard({ job }: { job: ExportJob }) {
 export default function ExportJobsPanel() {
   const jobs = useExportJobs();
   const [collapsed, setCollapsed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
-  const { active, recent } = useMemo(() => {
+  // Tick once a second so countdowns ("Auto-retry in 4s") stay accurate.
+  // Only run while there's a pending nextRetryAt to keep this cheap.
+  const hasPendingRetry = jobs.some((j) => j.status === "queued" && j.nextRetryAt);
+  useEffect(() => {
+    if (!hasPendingRetry) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hasPendingRetry]);
+
+  const { active, recent, eligibleFailedCount } = useMemo(() => {
     const active = jobs.filter((j) => j.status === "running" || j.status === "queued");
     const recent = jobs
       .filter((j) => j.status !== "running" && j.status !== "queued")
       .slice(-3);
-    return { active, recent };
+    const eligibleFailedCount = jobs.filter(
+      (j) =>
+        j.status === "failed" &&
+        j.retryable !== false &&
+        (j.retries ?? 0) < (j.maxRetries ?? 0),
+    ).length;
+    return { active, recent, eligibleFailedCount };
   }, [jobs]);
 
   if (jobs.length === 0) return null;
 
   const totalActive = active.length;
   const visible = collapsed ? [] : [...active, ...recent];
+
+  const handleRetryAll = () => {
+    const n = exportJobQueue.retryAllFailed();
+    if (n > 0) toast.success(`Retrying ${n} failed export${n === 1 ? "" : "s"}`);
+    else toast.info("No eligible failed exports to retry");
+  };
 
   return (
     <div
@@ -194,6 +292,19 @@ export default function ExportJobsPanel() {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {eligibleFailedCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs gap-1"
+              onClick={handleRetryAll}
+              title={`Retry ${eligibleFailedCount} failed export${eligibleFailedCount === 1 ? "" : "s"}`}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry failed ({eligibleFailedCount})
+            </Button>
+          )}
           {recent.length > 0 && (
             <Button
               type="button"
@@ -218,7 +329,7 @@ export default function ExportJobsPanel() {
         </div>
       </div>
       {visible.map((job) => (
-        <JobCard key={job.id} job={job} />
+        <JobCard key={job.id} job={job} now={now} />
       ))}
     </div>
   );

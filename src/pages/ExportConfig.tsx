@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import {
   type SchoolExportConfig,
   type ExportFormat,
 } from "@/lib/exportConfig";
+import { exportSettingsStore, DEFAULT_EXPORT_SETTINGS, type ExportSettings } from "@/lib/exportSettings";
 import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 
 const ROLES: UserRole[] = ["admin", "teacher"];
@@ -28,10 +30,16 @@ export default function ExportConfig() {
 
   const [draft, setDraft] = useState<SchoolExportConfig>(() => exportConfigStore.get());
   const [dirty, setDirty] = useState(false);
+  const [settings, setSettings] = useState<ExportSettings>(() => exportSettingsStore.get());
+  const [settingsDirty, setSettingsDirty] = useState(false);
 
   useEffect(() => exportConfigStore.subscribe(() => {
     if (!dirty) setDraft(exportConfigStore.get());
   }), [dirty]);
+
+  useEffect(() => exportSettingsStore.subscribe(() => {
+    if (!settingsDirty) setSettings(exportSettingsStore.get());
+  }), [settingsDirty]);
 
   if (!isAdmin) {
     return (
@@ -148,6 +156,65 @@ export default function ExportConfig() {
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Job retry behavior</CardTitle>
+          <CardDescription>
+            Controls how many times a failed export job is automatically retried
+            using exponential backoff before giving up. Applies to all roles.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-end gap-3">
+            <div className="space-y-1.5 flex-1 max-w-[160px]">
+              <Label htmlFor="max-retries" className="text-sm font-medium">
+                Default max retries
+              </Label>
+              <Input
+                id="max-retries"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={10}
+                value={settings.defaultMaxRetries}
+                onChange={(e) => {
+                  const n = Math.max(0, Math.min(10, Math.floor(Number(e.target.value) || 0)));
+                  setSettings({ defaultMaxRetries: n });
+                  setSettingsDirty(true);
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                0 disables auto-retry. Recommended: 2–5.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSettings(DEFAULT_EXPORT_SETTINGS);
+                  setSettingsDirty(true);
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                size="sm"
+                disabled={!settingsDirty}
+                onClick={() => {
+                  exportSettingsStore.set(settings);
+                  setSettingsDirty(false);
+                  toast.success("Retry settings saved");
+                }}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" onClick={handleReset}>
