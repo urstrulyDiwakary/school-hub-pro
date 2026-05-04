@@ -233,19 +233,41 @@ function JobCard({ job, now }: { job: ExportJob; now: number }) {
 export default function ExportJobsPanel() {
   const jobs = useExportJobs();
   const [collapsed, setCollapsed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
-  const { active, recent } = useMemo(() => {
+  // Tick once a second so countdowns ("Auto-retry in 4s") stay accurate.
+  // Only run while there's a pending nextRetryAt to keep this cheap.
+  const hasPendingRetry = jobs.some((j) => j.status === "queued" && j.nextRetryAt);
+  useEffect(() => {
+    if (!hasPendingRetry) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hasPendingRetry]);
+
+  const { active, recent, eligibleFailedCount } = useMemo(() => {
     const active = jobs.filter((j) => j.status === "running" || j.status === "queued");
     const recent = jobs
       .filter((j) => j.status !== "running" && j.status !== "queued")
       .slice(-3);
-    return { active, recent };
+    const eligibleFailedCount = jobs.filter(
+      (j) =>
+        j.status === "failed" &&
+        j.retryable !== false &&
+        (j.retries ?? 0) < (j.maxRetries ?? 0),
+    ).length;
+    return { active, recent, eligibleFailedCount };
   }, [jobs]);
 
   if (jobs.length === 0) return null;
 
   const totalActive = active.length;
   const visible = collapsed ? [] : [...active, ...recent];
+
+  const handleRetryAll = () => {
+    const n = exportJobQueue.retryAllFailed();
+    if (n > 0) toast.success(`Retrying ${n} failed export${n === 1 ? "" : "s"}`);
+    else toast.info("No eligible failed exports to retry");
+  };
 
   return (
     <div
@@ -270,6 +292,19 @@ export default function ExportJobsPanel() {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {eligibleFailedCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs gap-1"
+              onClick={handleRetryAll}
+              title={`Retry ${eligibleFailedCount} failed export${eligibleFailedCount === 1 ? "" : "s"}`}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry failed ({eligibleFailedCount})
+            </Button>
+          )}
           {recent.length > 0 && (
             <Button
               type="button"
@@ -294,7 +329,7 @@ export default function ExportJobsPanel() {
         </div>
       </div>
       {visible.map((job) => (
-        <JobCard key={job.id} job={job} />
+        <JobCard key={job.id} job={job} now={now} />
       ))}
     </div>
   );
