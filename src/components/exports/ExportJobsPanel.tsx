@@ -8,15 +8,16 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw, Copy, Check, RefreshCw, Filter, Download, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw, Copy, Check, RefreshCw, Filter, Download, Trash2, Search, FlaskConical, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useExportJobs } from "@/hooks/useExportJobs";
-import { exportJobQueue, type ExportJob, type ExportJobKind } from "@/lib/exportJobQueue";
+import { exportJobQueue, explainIneligibility, INELIGIBILITY_LABEL, type ExportJob, type ExportJobKind } from "@/lib/exportJobQueue";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -99,6 +100,11 @@ function downloadErrorReport(job: ExportJob) {
     lastError: job.lastError ?? null,
     lastFailedAt: job.lastFailedAt ? new Date(job.lastFailedAt).toISOString() : null,
     nextRetryAt: job.nextRetryAt ? new Date(job.nextRetryAt).toISOString() : null,
+    requestParams: job.requestParams ?? null,
+    appVersion:
+      (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.VITE_APP_VERSION) ||
+      "dev",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     generatedAt: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
@@ -284,6 +290,8 @@ export default function ExportJobsPanel() {
   const [now, setNow] = useState(() => Date.now());
   const [eligibleOnly, setEligibleOnly] = useState(false);
   const [kindFilter, setKindFilter] = useState<Set<ExportJobKind>>(() => new Set(ALL_KINDS));
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Tick once a second so countdowns ("Auto-retry in 4s") stay accurate.
   // Only run while there's a pending nextRetryAt to keep this cheap.
@@ -299,13 +307,27 @@ export default function ExportJobsPanel() {
     j.retryable !== false &&
     (j.retries ?? 0) < (j.maxRetries ?? 0);
 
+  const matchesSearch = (j: ExportJob, q: string) => {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    return (
+      j.label.toLowerCase().includes(needle) ||
+      j.kind.toLowerCase().includes(needle) ||
+      KIND_LABEL[j.kind].toLowerCase().includes(needle) ||
+      (j.error?.toLowerCase().includes(needle) ?? false) ||
+      (j.firstError?.toLowerCase().includes(needle) ?? false) ||
+      (j.lastError?.toLowerCase().includes(needle) ?? false)
+    );
+  };
+
   const passesFilters = (j: ExportJob) => {
     if (!kindFilter.has(j.kind)) return false;
     if (eligibleOnly && !isFailedEligible(j)) return false;
+    if (!matchesSearch(j, search.trim())) return false;
     return true;
   };
 
-  const filtersActive = eligibleOnly || kindFilter.size !== ALL_KINDS.length;
+  const filtersActive = eligibleOnly || kindFilter.size !== ALL_KINDS.length || search.trim() !== "";
 
   const { active, recent, eligibleFailedCount, hiddenCount } = useMemo(() => {
     const filtered = jobs.filter(passesFilters);
@@ -317,7 +339,25 @@ export default function ExportJobsPanel() {
     const hiddenCount = jobs.length - filtered.length;
     return { active, recent, eligibleFailedCount, hiddenCount };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobs, eligibleOnly, kindFilter]);
+  }, [jobs, eligibleOnly, kindFilter, search]);
+
+  // Per-job ineligibility breakdown — drives the filter tooltip and informs
+  // users why their failed job isn't being retried.
+  const ineligibilityBreakdown = useMemo(() => {
+    const breakdown = {
+      "not-failed": 0,
+      "not-retryable": 0,
+      "max-retries-reached": 0,
+      "kind-excluded": 0,
+    };
+    for (const j of jobs) {
+      const reason = explainIneligibility(j, { allowedKinds: kindFilter });
+      if (reason !== "ok" && reason in breakdown) {
+        breakdown[reason as keyof typeof breakdown] += 1;
+      }
+    }
+    return breakdown;
+  }, [jobs, kindFilter]);
 
   if (jobs.length === 0) return null;
 
@@ -341,150 +381,276 @@ export default function ExportJobsPanel() {
     else toast.info("No eligible failed exports to retry");
   };
 
+  const handleSimulateRetry = () => {
+    const plan = exportJobQueue.simulateRetryAll();
+    if (plan.length === 0) {
+      toast.info("Simulate retry: no eligible failed exports", {
+        description: "All failed jobs are non-retryable or have hit their max-retry cap.",
+      });
+      return;
+    }
+    const summary = plan
+      .slice(0, 5)
+      .map((p) => {
+        const secs = Math.max(0, Math.round(p.estimatedDelayMs / 100) / 10);
+        return `• ${p.label} — attempt ${p.nextAttempt}/${p.maxRetries} in ~${secs}s`;
+      })
+      .join("\n");
+    const more = plan.length > 5 ? `\n…and ${plan.length - 5} more` : "";
+    toast(`Would retry ${plan.length} export${plan.length === 1 ? "" : "s"}`, {
+      description: `${summary}${more}`,
+      duration: 8000,
+    });
+  };
+
   const handleClearHistory = () => {
     exportJobQueue.clearPersistedFailedHistory();
     toast.success("Failed export history cleared");
   };
 
   const hasFailedJobs = jobs.some((j) => j.status === "failed");
+  const totalIneligible =
+    ineligibilityBreakdown["not-retryable"] +
+    ineligibilityBreakdown["max-retries-reached"] +
+    ineligibilityBreakdown["kind-excluded"];
 
   return (
-    <div
-      className={cn(
-        "fixed z-50 bottom-4 right-4 w-[340px] max-w-[calc(100vw-2rem)]",
-        "flex flex-col gap-2",
-      )}
-      role="region"
-      aria-label="Export jobs"
-    >
-      <div className="flex items-center justify-between rounded-lg border bg-background/95 backdrop-blur px-3 py-2 shadow-md">
-        <div className="flex items-center gap-2 text-sm font-medium min-w-0">
-          {totalActive > 0 ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
-          ) : (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-          )}
-          <span className="truncate">
-            {totalActive > 0
-              ? `${totalActive} export${totalActive === 1 ? "" : "s"} in progress`
-              : `${recent.length} recent export${recent.length === 1 ? "" : "s"}`}
-            {hiddenCount > 0 && (
-              <span className="ml-1 text-muted-foreground font-normal">· {hiddenCount} hidden</span>
-            )}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn("h-6 w-6", filtersActive && "text-primary")}
-                aria-label="Filter jobs"
-                title="Filter jobs"
-              >
-                <Filter className="h-3.5 w-3.5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-60 p-3 space-y-3">
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Show</p>
-                <label className="flex items-center gap-2 text-xs cursor-pointer">
-                  <Checkbox
-                    checked={eligibleOnly}
-                    onCheckedChange={(v) => setEligibleOnly(v === true)}
-                  />
-                  <span>Only retry-eligible failed jobs</span>
-                </label>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-medium">Format</p>
-                <div className="space-y-1.5">
-                  {ALL_KINDS.map((k) => (
-                    <label key={k} className="flex items-center gap-2 text-xs cursor-pointer">
+    <TooltipProvider delayDuration={200}>
+      <div
+        className={cn(
+          "fixed z-50 bottom-4 right-4 w-[340px] max-w-[calc(100vw-2rem)]",
+          "flex flex-col gap-2",
+        )}
+        role="region"
+        aria-label="Export jobs"
+      >
+        <div className="rounded-lg border bg-background/95 backdrop-blur shadow-md">
+          <div className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center gap-2 text-sm font-medium min-w-0">
+              {totalActive > 0 ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              )}
+              <span className="truncate">
+                {totalActive > 0
+                  ? `${totalActive} export${totalActive === 1 ? "" : "s"} in progress`
+                  : `${recent.length} recent export${recent.length === 1 ? "" : "s"}`}
+                {hiddenCount > 0 && (
+                  <span className="ml-1 text-muted-foreground font-normal">· {hiddenCount} hidden</span>
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn("h-6 w-6", search.trim() && "text-primary")}
+                    onClick={() => setSearchOpen((v) => !v)}
+                    aria-label="Search jobs"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Search by label, format, or error text</TooltipContent>
+              </Tooltip>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn("h-6 w-6", filtersActive && "text-primary")}
+                    aria-label="Filter jobs"
+                    title="Filter jobs"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 p-3 space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-medium">Show</p>
+                      {totalIneligible > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground"
+                              aria-label="Why are some failed jobs not retry-eligible?"
+                            >
+                              <Info className="h-3 w-3" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[260px] text-xs">
+                            <p className="font-medium mb-1">Why some jobs aren't retry-eligible:</p>
+                            <ul className="space-y-0.5">
+                              {ineligibilityBreakdown["max-retries-reached"] > 0 && (
+                                <li>
+                                  • {ineligibilityBreakdown["max-retries-reached"]} —{" "}
+                                  {INELIGIBILITY_LABEL["max-retries-reached"]}
+                                </li>
+                              )}
+                              {ineligibilityBreakdown["not-retryable"] > 0 && (
+                                <li>
+                                  • {ineligibilityBreakdown["not-retryable"]} —{" "}
+                                  {INELIGIBILITY_LABEL["not-retryable"]}
+                                </li>
+                              )}
+                              {ineligibilityBreakdown["kind-excluded"] > 0 && (
+                                <li>
+                                  • {ineligibilityBreakdown["kind-excluded"]} —{" "}
+                                  {INELIGIBILITY_LABEL["kind-excluded"]}
+                                </li>
+                              )}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <label className="flex items-center gap-2 text-xs cursor-pointer">
                       <Checkbox
-                        checked={kindFilter.has(k)}
-                        onCheckedChange={() => toggleKind(k)}
+                        checked={eligibleOnly}
+                        onCheckedChange={(v) => setEligibleOnly(v === true)}
                       />
-                      <span>{KIND_LABEL[k]}</span>
+                      <span>Only retry-eligible failed jobs</span>
                     </label>
-                  ))}
-                </div>
-              </div>
-              {filtersActive && (
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">Format</p>
+                    <div className="space-y-1.5">
+                      {ALL_KINDS.map((k) => (
+                        <label key={k} className="flex items-center gap-2 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={kindFilter.has(k)}
+                            onCheckedChange={() => toggleKind(k)}
+                          />
+                          <span>{KIND_LABEL[k]}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {filtersActive && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-full text-xs"
+                      onClick={() => {
+                        setEligibleOnly(false);
+                        setKindFilter(new Set(ALL_KINDS));
+                        setSearch("");
+                      }}
+                    >
+                      Reset filters
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
+              {hasFailedJobs && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={handleSimulateRetry}
+                      aria-label="Simulate retry"
+                    >
+                      <FlaskConical className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Preview which jobs would retry (no changes made)</TooltipContent>
+                </Tooltip>
+              )}
+              {eligibleFailedCount > 0 && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-full text-xs"
-                  onClick={() => {
-                    setEligibleOnly(false);
-                    setKindFilter(new Set(ALL_KINDS));
-                  }}
+                  className="h-6 px-2 text-xs gap-1"
+                  onClick={handleRetryAll}
+                  title={`Retry ${eligibleFailedCount} failed export${eligibleFailedCount === 1 ? "" : "s"}`}
                 >
-                  Reset filters
+                  <RefreshCw className="h-3 w-3" />
+                  Retry failed ({eligibleFailedCount})
                 </Button>
               )}
-            </PopoverContent>
-          </Popover>
-          {eligibleFailedCount > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs gap-1"
-              onClick={handleRetryAll}
-              title={`Retry ${eligibleFailedCount} failed export${eligibleFailedCount === 1 ? "" : "s"}`}
-            >
-              <RefreshCw className="h-3 w-3" />
-              Retry failed ({eligibleFailedCount})
-            </Button>
+              {hasFailedJobs && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleClearHistory}
+                  aria-label="Clear failed history"
+                  title="Clear persisted failed export history"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {recent.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => exportJobQueue.clearFinished()}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setCollapsed((v) => !v)}
+                aria-label={collapsed ? "Expand jobs panel" : "Collapse jobs panel"}
+              >
+                {collapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+          {(searchOpen || search.trim()) && (
+            <div className="px-3 pb-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search label, format, or error…"
+                  className="h-7 pl-7 pr-7 text-xs"
+                  autoFocus
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           )}
-          {hasFailedJobs && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleClearHistory}
-              aria-label="Clear failed history"
-              title="Clear persisted failed export history"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          )}
-          {recent.length > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => exportJobQueue.clearFinished()}
-            >
-              Clear
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => setCollapsed((v) => !v)}
-            aria-label={collapsed ? "Expand jobs panel" : "Collapse jobs panel"}
-          >
-            {collapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          </Button>
         </div>
+        {visible.map((job) => (
+          <JobCard key={job.id} job={job} now={now} />
+        ))}
+        {!collapsed && visible.length === 0 && filtersActive && (
+          <div className="rounded-lg border bg-card px-3 py-4 text-center text-xs text-muted-foreground shadow-md">
+            No jobs match the current filters.
+          </div>
+        )}
       </div>
-      {visible.map((job) => (
-        <JobCard key={job.id} job={job} now={now} />
-      ))}
-      {!collapsed && visible.length === 0 && filtersActive && (
-        <div className="rounded-lg border bg-card px-3 py-4 text-center text-xs text-muted-foreground shadow-md">
-          No jobs match the current filters.
-        </div>
-      )}
-    </div>
+    </TooltipProvider>
   );
 }

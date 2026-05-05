@@ -17,7 +17,7 @@
  */
 
 import type { AttendanceStatus } from "@/data/teacherData";
-import { exportSettingsStore } from "./exportSettings";
+import { exportSettingsStore, resolveConcurrentCap } from "./exportSettings";
 
 export type ExportJobKind = "csv" | "pdf" | "htmlFallback" | "combined-pdf";
 export type ExportJobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -53,7 +53,41 @@ export interface ExportJob {
   lastFailedAt?: number;
   /** When set, an auto-retry is scheduled to run at this timestamp (epoch ms). */
   nextRetryAt?: number;
+  /**
+   * Optional snapshot of the original export request (date range, student
+   * ids, template id/version, format options). Stored on the job so error
+   * reports and support tickets carry the exact reproduction context.
+   * Must be JSON-serializable.
+   */
+  requestParams?: Record<string, unknown>;
 }
+
+/** Reason a failed/cancelled job is not currently retry-eligible. */
+export type IneligibleReason =
+  | "ok"
+  | "not-failed"
+  | "not-retryable"
+  | "max-retries-reached"
+  | "kind-excluded";
+
+export function explainIneligibility(
+  job: ExportJob,
+  opts?: { allowedKinds?: ReadonlySet<ExportJobKind> },
+): IneligibleReason {
+  if (job.status !== "failed" && job.status !== "cancelled") return "not-failed";
+  if (job.retryable === false) return "not-retryable";
+  if ((job.retries ?? 0) >= (job.maxRetries ?? 0)) return "max-retries-reached";
+  if (opts?.allowedKinds && !opts.allowedKinds.has(job.kind)) return "kind-excluded";
+  return "ok";
+}
+
+export const INELIGIBILITY_LABEL: Record<IneligibleReason, string> = {
+  "ok": "Eligible to retry",
+  "not-failed": "Job is not in a failed or cancelled state",
+  "not-retryable": "This job was marked non-retryable (e.g. restored from a previous session)",
+  "max-retries-reached": "Maximum retry attempts have been used",
+  "kind-excluded": "Hidden by the current format filter",
+};
 
 export type JobRunner = (
   ctx: {
@@ -176,7 +210,7 @@ class ExportJobQueueImpl {
     kind: ExportJobKind,
     label: string,
     runner: JobRunner,
-    opts?: { retryable?: boolean; maxRetries?: number },
+    opts?: { retryable?: boolean; maxRetries?: number; requestParams?: Record<string, unknown> },
   ): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const retryable = opts?.retryable !== false;
@@ -190,6 +224,7 @@ class ExportJobQueueImpl {
         retryable,
         retries: 0,
         maxRetries,
+        requestParams: opts?.requestParams,
       },
       runner,
       cancelled: false,
@@ -287,17 +322,20 @@ class ExportJobQueueImpl {
   /** Pending auto-retry items waiting for a free concurrency slot. */
   private autoRetryWaitQueue: QueuedItem[] = [];
 
-  private currentAutoRetrySlots(): number {
-    return this.items.filter((i) => i.retryTimer !== undefined).length;
+  private currentAutoRetrySlots(kind?: ExportJobKind): number {
+    return this.items.filter(
+      (i) => i.retryTimer !== undefined && (kind ? i.job.kind === kind : true),
+    ).length;
   }
 
   private scheduleAutoRetry(item: QueuedItem) {
     if (!item.retryable) return;
     const attempt = (item.job.retries ?? 0) + 1;
     if (attempt > item.maxRetries) return;
-    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
-    if (cap > 0 && this.currentAutoRetrySlots() >= cap) {
-      // Defer: another auto-retry is already pending. Try again when one frees up.
+    const settings = exportSettingsStore.get();
+    const cap = resolveConcurrentCap(settings, item.job.kind);
+    if (cap > 0 && this.currentAutoRetrySlots(item.job.kind) >= cap) {
+      // Defer: per-kind cap reached. Try again when one frees up.
       if (!this.autoRetryWaitQueue.includes(item)) this.autoRetryWaitQueue.push(item);
       return;
     }
@@ -313,15 +351,55 @@ class ExportJobQueueImpl {
   }
 
   private drainAutoRetryWaitQueue() {
-    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
-    while (this.autoRetryWaitQueue.length > 0) {
-      if (cap > 0 && this.currentAutoRetrySlots() >= cap) break;
-      const next = this.autoRetryWaitQueue.shift();
-      if (!next || next.job.status !== "failed") continue;
+    const settings = exportSettingsStore.get();
+    // Walk a copy so re-deferred items don't infinite-loop.
+    const pending = [...this.autoRetryWaitQueue];
+    this.autoRetryWaitQueue = [];
+    for (const next of pending) {
+      if (next.job.status !== "failed") continue;
       if ((next.job.retries ?? 0) >= next.maxRetries) continue;
+      const cap = resolveConcurrentCap(settings, next.job.kind);
+      if (cap > 0 && this.currentAutoRetrySlots(next.job.kind) >= cap) {
+        this.autoRetryWaitQueue.push(next);
+        continue;
+      }
       this.scheduleAutoRetry(next);
     }
   }
+
+  /**
+   * Dry-run a "retry all eligible" operation. Returns a plan describing each
+   * job that would be retried, with the projected attempt number and the
+   * approximate next-retry time computed from a fresh backoff sample. Does
+   * NOT mutate any job state.
+   */
+  simulateRetryAll(): Array<{
+    id: string;
+    kind: ExportJobKind;
+    label: string;
+    nextAttempt: number;
+    maxRetries: number;
+    estimatedDelayMs: number;
+    estimatedRetryAt: number;
+  }> {
+    const now = Date.now();
+    return this.items
+      .filter((i) => this.canRetry(i.job.id))
+      .map((i) => {
+        const nextAttempt = (i.job.retries ?? 0) + 1;
+        const delay = computeBackoffMs(nextAttempt);
+        return {
+          id: i.job.id,
+          kind: i.job.kind,
+          label: i.job.label,
+          nextAttempt,
+          maxRetries: i.maxRetries,
+          estimatedDelayMs: delay,
+          estimatedRetryAt: now + delay,
+        };
+      });
+  }
+
 
   /** Clear persisted failed history from localStorage and remove restored failed jobs from view. */
   clearPersistedFailedHistory() {

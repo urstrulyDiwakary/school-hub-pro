@@ -207,7 +207,7 @@ export default function ExportConfig() {
                 }}
               />
               <p className="text-[11px] text-muted-foreground">
-                Caps simultaneous backoff timers. 0 = no cap.
+                Global fallback. Caps simultaneous backoff timers across all kinds. 0 = no cap.
               </p>
             </div>
             <div className="flex items-center gap-2 ml-auto">
@@ -236,6 +236,53 @@ export default function ExportConfig() {
             </div>
           </div>
           <Separator />
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Per-format auto-retry caps</p>
+            <p className="text-[11px] text-muted-foreground">
+              Override the global cap for specific export formats. Leave blank to inherit
+              the global value above. Useful when, e.g., combined PDFs are heavier and
+              should retry one at a time.
+            </p>
+            <div className="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-4">
+              {(["csv", "pdf", "htmlFallback", "combined-pdf"] as const).map((kind) => {
+                const KIND_LABELS: Record<typeof kind, string> = {
+                  csv: "CSV",
+                  pdf: "PDF",
+                  htmlFallback: "HTML",
+                  "combined-pdf": "Combined PDF",
+                };
+                const value = settings.maxConcurrentAutoRetriesByKind?.[kind];
+                return (
+                  <div key={kind} className="space-y-1">
+                    <Label htmlFor={`mc-${kind}`} className="text-xs font-medium">
+                      {KIND_LABELS[kind]}
+                    </Label>
+                    <Input
+                      id={`mc-${kind}`}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={20}
+                      placeholder="—"
+                      value={value ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const byKind = { ...(settings.maxConcurrentAutoRetriesByKind ?? {}) };
+                        if (raw === "") {
+                          delete byKind[kind];
+                        } else {
+                          const n = Math.max(0, Math.min(20, Math.floor(Number(raw) || 0)));
+                          byKind[kind] = n;
+                        }
+                        setSettings({ ...settings, maxConcurrentAutoRetriesByKind: byKind });
+                        setSettingsDirty(true);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium">Persisted failed export history</p>
