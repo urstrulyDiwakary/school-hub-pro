@@ -284,10 +284,23 @@ class ExportJobQueueImpl {
     this.notify();
   }
 
+  /** Pending auto-retry items waiting for a free concurrency slot. */
+  private autoRetryWaitQueue: QueuedItem[] = [];
+
+  private currentAutoRetrySlots(): number {
+    return this.items.filter((i) => i.retryTimer !== undefined).length;
+  }
+
   private scheduleAutoRetry(item: QueuedItem) {
     if (!item.retryable) return;
     const attempt = (item.job.retries ?? 0) + 1;
     if (attempt > item.maxRetries) return;
+    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
+    if (cap > 0 && this.currentAutoRetrySlots() >= cap) {
+      // Defer: another auto-retry is already pending. Try again when one frees up.
+      if (!this.autoRetryWaitQueue.includes(item)) this.autoRetryWaitQueue.push(item);
+      return;
+    }
     const delay = computeBackoffMs(attempt);
     item.job.nextRetryAt = Date.now() + delay;
     this.notify();
@@ -295,7 +308,29 @@ class ExportJobQueueImpl {
       item.retryTimer = undefined;
       // Only auto-retry if still in failed state and not user-cleared.
       if (item.job.status === "failed") this.retry(item.job.id);
+      this.drainAutoRetryWaitQueue();
     }, delay);
+  }
+
+  private drainAutoRetryWaitQueue() {
+    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
+    while (this.autoRetryWaitQueue.length > 0) {
+      if (cap > 0 && this.currentAutoRetrySlots() >= cap) break;
+      const next = this.autoRetryWaitQueue.shift();
+      if (!next || next.job.status !== "failed") continue;
+      if ((next.job.retries ?? 0) >= next.maxRetries) continue;
+      this.scheduleAutoRetry(next);
+    }
+  }
+
+  /** Clear persisted failed history from localStorage and remove restored failed jobs from view. */
+  clearPersistedFailedHistory() {
+    if (typeof window !== "undefined") {
+      try { window.localStorage.removeItem(FAILED_HISTORY_KEY); } catch { /* noop */ }
+    }
+    // Also remove failed items currently in the queue so the panel reflects the wipe.
+    this.items = this.items.filter((i) => i.job.status !== "failed");
+    this.notify();
   }
 
   private async tick() {
