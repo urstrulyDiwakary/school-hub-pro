@@ -83,6 +83,36 @@ function buildErrorClipboardText(job: ExportJob): string {
   return lines.join("\n");
 }
 
+function downloadErrorReport(job: ExportJob) {
+  const report = {
+    jobId: job.id,
+    label: job.label,
+    kind: job.kind,
+    format: KIND_LABEL[job.kind],
+    status: job.status,
+    retries: job.retries ?? 0,
+    maxRetries: job.maxRetries ?? 0,
+    startedAt: new Date(job.startedAt).toISOString(),
+    finishedAt: job.finishedAt ? new Date(job.finishedAt).toISOString() : null,
+    firstError: job.firstError ?? null,
+    firstFailedAt: job.firstFailedAt ? new Date(job.firstFailedAt).toISOString() : null,
+    lastError: job.lastError ?? null,
+    lastFailedAt: job.lastFailedAt ? new Date(job.lastFailedAt).toISOString() : null,
+    nextRetryAt: job.nextRetryAt ? new Date(job.nextRetryAt).toISOString() : null,
+    generatedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `export-error-${job.id}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast.success("Error report downloaded");
+}
+
 function JobCard({ job, now }: { job: ExportJob; now: number }) {
   const KindIcon = KIND_ICON[job.kind];
   const isActive = job.status === "running" || job.status === "queued";
