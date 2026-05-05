@@ -100,6 +100,11 @@ function downloadErrorReport(job: ExportJob) {
     lastError: job.lastError ?? null,
     lastFailedAt: job.lastFailedAt ? new Date(job.lastFailedAt).toISOString() : null,
     nextRetryAt: job.nextRetryAt ? new Date(job.nextRetryAt).toISOString() : null,
+    requestParams: job.requestParams ?? null,
+    appVersion:
+      (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.VITE_APP_VERSION) ||
+      "dev",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     generatedAt: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
