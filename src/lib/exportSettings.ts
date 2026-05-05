@@ -12,10 +12,17 @@ const CHANGE_EVENT = "export-settings-updated";
 export interface ExportSettings {
   /** Default cap on automatic retries for failed export jobs. */
   defaultMaxRetries: number;
+  /**
+   * Max number of failed export jobs that can be waiting on an auto-retry
+   * timer at the same time. Extra jobs queue until a slot frees up. 0 = no
+   * cap (any number can wait concurrently).
+   */
+  maxConcurrentAutoRetries: number;
 }
 
 export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
   defaultMaxRetries: 3,
+  maxConcurrentAutoRetries: 2,
 };
 
 function safeParse(raw: string | null): ExportSettings | null {
@@ -24,7 +31,11 @@ function safeParse(raw: string | null): ExportSettings | null {
     const p = JSON.parse(raw) as Partial<ExportSettings>;
     const n = Number(p.defaultMaxRetries);
     if (!Number.isFinite(n) || n < 0 || n > 20) return null;
-    return { defaultMaxRetries: Math.floor(n) };
+    const c = Number(p.maxConcurrentAutoRetries);
+    const concurrent = Number.isFinite(c) && c >= 0 && c <= 20
+      ? Math.floor(c)
+      : DEFAULT_EXPORT_SETTINGS.maxConcurrentAutoRetries;
+    return { defaultMaxRetries: Math.floor(n), maxConcurrentAutoRetries: concurrent };
   } catch {
     return null;
   }
