@@ -166,8 +166,8 @@ export default function ExportConfig() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-end gap-3">
-            <div className="space-y-1.5 flex-1 max-w-[160px]">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5 max-w-[160px]">
               <Label htmlFor="max-retries" className="text-sm font-medium">
                 Default max retries
               </Label>
@@ -180,7 +180,7 @@ export default function ExportConfig() {
                 value={settings.defaultMaxRetries}
                 onChange={(e) => {
                   const n = Math.max(0, Math.min(10, Math.floor(Number(e.target.value) || 0)));
-                  setSettings({ defaultMaxRetries: n });
+                  setSettings({ ...settings, defaultMaxRetries: n });
                   setSettingsDirty(true);
                 }}
               />
@@ -188,7 +188,28 @@ export default function ExportConfig() {
                 0 disables auto-retry. Recommended: 2–5.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="space-y-1.5 max-w-[180px]">
+              <Label htmlFor="max-concurrent-retries" className="text-sm font-medium">
+                Max concurrent auto-retries
+              </Label>
+              <Input
+                id="max-concurrent-retries"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={20}
+                value={settings.maxConcurrentAutoRetries}
+                onChange={(e) => {
+                  const n = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)));
+                  setSettings({ ...settings, maxConcurrentAutoRetries: n });
+                  setSettingsDirty(true);
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Caps simultaneous backoff timers. 0 = no cap.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
               <Button
                 variant="outline"
                 size="sm"
@@ -212,6 +233,26 @@ export default function ExportConfig() {
                 Save
               </Button>
             </div>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Persisted failed export history</p>
+              <p className="text-[11px] text-muted-foreground">
+                Failed jobs are remembered across page reloads so users can copy errors for support.
+                Clearing wipes the local history on this device.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                exportJobQueue.clearPersistedFailedHistory();
+                toast.success("Failed export history cleared");
+              }}
+            >
+              Clear history
+            </Button>
           </div>
         </CardContent>
       </Card>
