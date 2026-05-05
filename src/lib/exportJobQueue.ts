@@ -17,7 +17,7 @@
  */
 
 import type { AttendanceStatus } from "@/data/teacherData";
-import { exportSettingsStore } from "./exportSettings";
+import { exportSettingsStore, resolveConcurrentCap } from "./exportSettings";
 
 export type ExportJobKind = "csv" | "pdf" | "htmlFallback" | "combined-pdf";
 export type ExportJobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
