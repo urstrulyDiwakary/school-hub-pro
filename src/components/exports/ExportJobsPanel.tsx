@@ -8,10 +8,13 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw, Copy, Check, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Loader2, CheckCircle2, AlertCircle, Ban, FileText, FileSpreadsheet, FileCode2, Files, RotateCcw, Copy, Check, RefreshCw, Filter, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useExportJobs } from "@/hooks/useExportJobs";
 import { exportJobQueue, type ExportJob, type ExportJobKind } from "@/lib/exportJobQueue";
 import { cn } from "@/lib/utils";
@@ -78,6 +81,36 @@ function buildErrorClipboardText(job: ExportJob): string {
   }
   lines.push(`Retries: ${job.retries ?? 0}/${job.maxRetries ?? 0}`);
   return lines.join("\n");
+}
+
+function downloadErrorReport(job: ExportJob) {
+  const report = {
+    jobId: job.id,
+    label: job.label,
+    kind: job.kind,
+    format: KIND_LABEL[job.kind],
+    status: job.status,
+    retries: job.retries ?? 0,
+    maxRetries: job.maxRetries ?? 0,
+    startedAt: new Date(job.startedAt).toISOString(),
+    finishedAt: job.finishedAt ? new Date(job.finishedAt).toISOString() : null,
+    firstError: job.firstError ?? null,
+    firstFailedAt: job.firstFailedAt ? new Date(job.firstFailedAt).toISOString() : null,
+    lastError: job.lastError ?? null,
+    lastFailedAt: job.lastFailedAt ? new Date(job.lastFailedAt).toISOString() : null,
+    nextRetryAt: job.nextRetryAt ? new Date(job.nextRetryAt).toISOString() : null,
+    generatedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `export-error-${job.id}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast.success("Error report downloaded");
 }
 
 function JobCard({ job, now }: { job: ExportJob; now: number }) {
@@ -194,6 +227,19 @@ function JobCard({ job, now }: { job: ExportJob; now: number }) {
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
           )}
+          {job.status === "failed" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => downloadErrorReport(job)}
+              aria-label="Download error report"
+              title="Download failure details as JSON for support"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {isFailedOrCancelled && job.retryable !== false && (
             <Button
               type="button"
@@ -230,10 +276,14 @@ function JobCard({ job, now }: { job: ExportJob; now: number }) {
   );
 }
 
+const ALL_KINDS: ExportJobKind[] = ["csv", "pdf", "htmlFallback", "combined-pdf"];
+
 export default function ExportJobsPanel() {
   const jobs = useExportJobs();
   const [collapsed, setCollapsed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [eligibleOnly, setEligibleOnly] = useState(false);
+  const [kindFilter, setKindFilter] = useState<Set<ExportJobKind>>(() => new Set(ALL_KINDS));
 
   // Tick once a second so countdowns ("Auto-retry in 4s") stay accurate.
   // Only run while there's a pending nextRetryAt to keep this cheap.
@@ -244,24 +294,46 @@ export default function ExportJobsPanel() {
     return () => clearInterval(id);
   }, [hasPendingRetry]);
 
-  const { active, recent, eligibleFailedCount } = useMemo(() => {
-    const active = jobs.filter((j) => j.status === "running" || j.status === "queued");
-    const recent = jobs
+  const isFailedEligible = (j: ExportJob) =>
+    j.status === "failed" &&
+    j.retryable !== false &&
+    (j.retries ?? 0) < (j.maxRetries ?? 0);
+
+  const passesFilters = (j: ExportJob) => {
+    if (!kindFilter.has(j.kind)) return false;
+    if (eligibleOnly && !isFailedEligible(j)) return false;
+    return true;
+  };
+
+  const filtersActive = eligibleOnly || kindFilter.size !== ALL_KINDS.length;
+
+  const { active, recent, eligibleFailedCount, hiddenCount } = useMemo(() => {
+    const filtered = jobs.filter(passesFilters);
+    const active = filtered.filter((j) => j.status === "running" || j.status === "queued");
+    const recent = filtered
       .filter((j) => j.status !== "running" && j.status !== "queued")
-      .slice(-3);
-    const eligibleFailedCount = jobs.filter(
-      (j) =>
-        j.status === "failed" &&
-        j.retryable !== false &&
-        (j.retries ?? 0) < (j.maxRetries ?? 0),
-    ).length;
-    return { active, recent, eligibleFailedCount };
-  }, [jobs]);
+      .slice(-5);
+    const eligibleFailedCount = jobs.filter(isFailedEligible).length;
+    const hiddenCount = jobs.length - filtered.length;
+    return { active, recent, eligibleFailedCount, hiddenCount };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs, eligibleOnly, kindFilter]);
 
   if (jobs.length === 0) return null;
 
   const totalActive = active.length;
   const visible = collapsed ? [] : [...active, ...recent];
+
+  const toggleKind = (k: ExportJobKind) => {
+    setKindFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      // Never allow an empty set — that would hide everything silently.
+      if (next.size === 0) return prev;
+      return next;
+    });
+  };
 
   const handleRetryAll = () => {
     const n = exportJobQueue.retryAllFailed();
@@ -269,29 +341,93 @@ export default function ExportJobsPanel() {
     else toast.info("No eligible failed exports to retry");
   };
 
+  const handleClearHistory = () => {
+    exportJobQueue.clearPersistedFailedHistory();
+    toast.success("Failed export history cleared");
+  };
+
+  const hasFailedJobs = jobs.some((j) => j.status === "failed");
+
   return (
     <div
       className={cn(
-        "fixed z-50 bottom-4 right-4 w-[320px] max-w-[calc(100vw-2rem)]",
+        "fixed z-50 bottom-4 right-4 w-[340px] max-w-[calc(100vw-2rem)]",
         "flex flex-col gap-2",
       )}
       role="region"
       aria-label="Export jobs"
     >
       <div className="flex items-center justify-between rounded-lg border bg-background/95 backdrop-blur px-3 py-2 shadow-md">
-        <div className="flex items-center gap-2 text-sm font-medium">
+        <div className="flex items-center gap-2 text-sm font-medium min-w-0">
           {totalActive > 0 ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
           ) : (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
           )}
-          <span>
+          <span className="truncate">
             {totalActive > 0
               ? `${totalActive} export${totalActive === 1 ? "" : "s"} in progress`
               : `${recent.length} recent export${recent.length === 1 ? "" : "s"}`}
+            {hiddenCount > 0 && (
+              <span className="ml-1 text-muted-foreground font-normal">· {hiddenCount} hidden</span>
+            )}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn("h-6 w-6", filtersActive && "text-primary")}
+                aria-label="Filter jobs"
+                title="Filter jobs"
+              >
+                <Filter className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-60 p-3 space-y-3">
+              <div className="space-y-2">
+                <p className="text-xs font-medium">Show</p>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <Checkbox
+                    checked={eligibleOnly}
+                    onCheckedChange={(v) => setEligibleOnly(v === true)}
+                  />
+                  <span>Only retry-eligible failed jobs</span>
+                </label>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium">Format</p>
+                <div className="space-y-1.5">
+                  {ALL_KINDS.map((k) => (
+                    <label key={k} className="flex items-center gap-2 text-xs cursor-pointer">
+                      <Checkbox
+                        checked={kindFilter.has(k)}
+                        onCheckedChange={() => toggleKind(k)}
+                      />
+                      <span>{KIND_LABEL[k]}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {filtersActive && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-full text-xs"
+                  onClick={() => {
+                    setEligibleOnly(false);
+                    setKindFilter(new Set(ALL_KINDS));
+                  }}
+                >
+                  Reset filters
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
           {eligibleFailedCount > 0 && (
             <Button
               type="button"
@@ -303,6 +439,19 @@ export default function ExportJobsPanel() {
             >
               <RefreshCw className="h-3 w-3" />
               Retry failed ({eligibleFailedCount})
+            </Button>
+          )}
+          {hasFailedJobs && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleClearHistory}
+              aria-label="Clear failed history"
+              title="Clear persisted failed export history"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
           {recent.length > 0 && (
@@ -331,6 +480,11 @@ export default function ExportJobsPanel() {
       {visible.map((job) => (
         <JobCard key={job.id} job={job} now={now} />
       ))}
+      {!collapsed && visible.length === 0 && filtersActive && (
+        <div className="rounded-lg border bg-card px-3 py-4 text-center text-xs text-muted-foreground shadow-md">
+          No jobs match the current filters.
+        </div>
+      )}
     </div>
   );
 }
