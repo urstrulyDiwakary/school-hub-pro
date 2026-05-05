@@ -227,6 +227,19 @@ function JobCard({ job, now }: { job: ExportJob; now: number }) {
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
           )}
+          {job.status === "failed" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => downloadErrorReport(job)}
+              aria-label="Download error report"
+              title="Download failure details as JSON for support"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {isFailedOrCancelled && job.retryable !== false && (
             <Button
               type="button"
