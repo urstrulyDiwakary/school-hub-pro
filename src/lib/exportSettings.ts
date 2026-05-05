@@ -6,7 +6,7 @@
  * touching consumers.
  */
 
-import type { ExportJobKind } from "./exportJobQueue.types";
+type ExportJobKind = "csv" | "pdf" | "htmlFallback" | "combined-pdf";
 
 const STORAGE_KEY = "export-settings:v1";
 const CHANGE_EVENT = "export-settings-updated";
