@@ -210,7 +210,7 @@ class ExportJobQueueImpl {
     kind: ExportJobKind,
     label: string,
     runner: JobRunner,
-    opts?: { retryable?: boolean; maxRetries?: number },
+    opts?: { retryable?: boolean; maxRetries?: number; requestParams?: Record<string, unknown> },
   ): string {
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const retryable = opts?.retryable !== false;
@@ -224,6 +224,7 @@ class ExportJobQueueImpl {
         retryable,
         retries: 0,
         maxRetries,
+        requestParams: opts?.requestParams,
       },
       runner,
       cancelled: false,
