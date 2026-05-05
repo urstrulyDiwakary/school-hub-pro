@@ -15,6 +15,7 @@ import {
   type ExportFormat,
 } from "@/lib/exportConfig";
 import { exportSettingsStore, DEFAULT_EXPORT_SETTINGS, type ExportSettings } from "@/lib/exportSettings";
+import { exportJobQueue } from "@/lib/exportJobQueue";
 import { resolveEffectivePermissions, type UserRole } from "@/lib/userRole";
 
 const ROLES: UserRole[] = ["admin", "teacher"];
