@@ -53,7 +53,41 @@ export interface ExportJob {
   lastFailedAt?: number;
   /** When set, an auto-retry is scheduled to run at this timestamp (epoch ms). */
   nextRetryAt?: number;
+  /**
+   * Optional snapshot of the original export request (date range, student
+   * ids, template id/version, format options). Stored on the job so error
+   * reports and support tickets carry the exact reproduction context.
+   * Must be JSON-serializable.
+   */
+  requestParams?: Record<string, unknown>;
 }
+
+/** Reason a failed/cancelled job is not currently retry-eligible. */
+export type IneligibleReason =
+  | "ok"
+  | "not-failed"
+  | "not-retryable"
+  | "max-retries-reached"
+  | "kind-excluded";
+
+export function explainIneligibility(
+  job: ExportJob,
+  opts?: { allowedKinds?: ReadonlySet<ExportJobKind> },
+): IneligibleReason {
+  if (job.status !== "failed" && job.status !== "cancelled") return "not-failed";
+  if (job.retryable === false) return "not-retryable";
+  if ((job.retries ?? 0) >= (job.maxRetries ?? 0)) return "max-retries-reached";
+  if (opts?.allowedKinds && !opts.allowedKinds.has(job.kind)) return "kind-excluded";
+  return "ok";
+}
+
+export const INELIGIBILITY_LABEL: Record<IneligibleReason, string> = {
+  "ok": "Eligible to retry",
+  "not-failed": "Job is not in a failed or cancelled state",
+  "not-retryable": "This job was marked non-retryable (e.g. restored from a previous session)",
+  "max-retries-reached": "Maximum retry attempts have been used",
+  "kind-excluded": "Hidden by the current format filter",
+};
 
 export type JobRunner = (
   ctx: {
