@@ -322,17 +322,20 @@ class ExportJobQueueImpl {
   /** Pending auto-retry items waiting for a free concurrency slot. */
   private autoRetryWaitQueue: QueuedItem[] = [];
 
-  private currentAutoRetrySlots(): number {
-    return this.items.filter((i) => i.retryTimer !== undefined).length;
+  private currentAutoRetrySlots(kind?: ExportJobKind): number {
+    return this.items.filter(
+      (i) => i.retryTimer !== undefined && (kind ? i.job.kind === kind : true),
+    ).length;
   }
 
   private scheduleAutoRetry(item: QueuedItem) {
     if (!item.retryable) return;
     const attempt = (item.job.retries ?? 0) + 1;
     if (attempt > item.maxRetries) return;
-    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
-    if (cap > 0 && this.currentAutoRetrySlots() >= cap) {
-      // Defer: another auto-retry is already pending. Try again when one frees up.
+    const settings = exportSettingsStore.get();
+    const cap = resolveConcurrentCap(settings, item.job.kind);
+    if (cap > 0 && this.currentAutoRetrySlots(item.job.kind) >= cap) {
+      // Defer: per-kind cap reached. Try again when one frees up.
       if (!this.autoRetryWaitQueue.includes(item)) this.autoRetryWaitQueue.push(item);
       return;
     }
@@ -348,15 +351,55 @@ class ExportJobQueueImpl {
   }
 
   private drainAutoRetryWaitQueue() {
-    const cap = exportSettingsStore.get().maxConcurrentAutoRetries;
-    while (this.autoRetryWaitQueue.length > 0) {
-      if (cap > 0 && this.currentAutoRetrySlots() >= cap) break;
-      const next = this.autoRetryWaitQueue.shift();
-      if (!next || next.job.status !== "failed") continue;
+    const settings = exportSettingsStore.get();
+    // Walk a copy so re-deferred items don't infinite-loop.
+    const pending = [...this.autoRetryWaitQueue];
+    this.autoRetryWaitQueue = [];
+    for (const next of pending) {
+      if (next.job.status !== "failed") continue;
       if ((next.job.retries ?? 0) >= next.maxRetries) continue;
+      const cap = resolveConcurrentCap(settings, next.job.kind);
+      if (cap > 0 && this.currentAutoRetrySlots(next.job.kind) >= cap) {
+        this.autoRetryWaitQueue.push(next);
+        continue;
+      }
       this.scheduleAutoRetry(next);
     }
   }
+
+  /**
+   * Dry-run a "retry all eligible" operation. Returns a plan describing each
+   * job that would be retried, with the projected attempt number and the
+   * approximate next-retry time computed from a fresh backoff sample. Does
+   * NOT mutate any job state.
+   */
+  simulateRetryAll(): Array<{
+    id: string;
+    kind: ExportJobKind;
+    label: string;
+    nextAttempt: number;
+    maxRetries: number;
+    estimatedDelayMs: number;
+    estimatedRetryAt: number;
+  }> {
+    const now = Date.now();
+    return this.items
+      .filter((i) => this.canRetry(i.job.id))
+      .map((i) => {
+        const nextAttempt = (i.job.retries ?? 0) + 1;
+        const delay = computeBackoffMs(nextAttempt);
+        return {
+          id: i.job.id,
+          kind: i.job.kind,
+          label: i.job.label,
+          nextAttempt,
+          maxRetries: i.maxRetries,
+          estimatedDelayMs: delay,
+          estimatedRetryAt: now + delay,
+        };
+      });
+  }
+
 
   /** Clear persisted failed history from localStorage and remove restored failed jobs from view. */
   clearPersistedFailedHistory() {
