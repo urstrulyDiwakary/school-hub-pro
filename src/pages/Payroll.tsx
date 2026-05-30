@@ -224,8 +224,16 @@ export default function Payroll() {
   };
 
   const totalSalary = filteredPayroll.reduce((sum, item) => sum + item.netSalary, 0);
+  const totalDeductions = filteredPayroll.reduce((sum, item) => sum + item.deductions, 0);
   const paidCount = filteredPayroll.filter((item) => item.status === "paid").length;
   const pendingCount = filteredPayroll.filter((item) => item.status === "pending").length;
+  const totalStaff = filteredPayroll.length;
+
+  const formatCompactCurrency = (amount: number) => {
+    if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)}L`;
+    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
+    return `₹${amount}`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
