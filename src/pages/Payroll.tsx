@@ -224,8 +224,16 @@ export default function Payroll() {
   };
 
   const totalSalary = filteredPayroll.reduce((sum, item) => sum + item.netSalary, 0);
+  
   const paidCount = filteredPayroll.filter((item) => item.status === "paid").length;
   const pendingCount = filteredPayroll.filter((item) => item.status === "pending").length;
+  const totalStaff = filteredPayroll.length;
+
+  const formatCompactCurrency = (amount: number) => {
+    if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)}L`;
+    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
+    return `₹${amount}`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -258,7 +266,7 @@ export default function Payroll() {
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">₹12.3L</p>
+                <p className="text-2xl font-bold text-foreground">{formatCompactCurrency(totalSalary)}</p>
                 <p className="text-sm text-muted-foreground">Total Payroll</p>
               </div>
             </div>
@@ -297,7 +305,7 @@ export default function Payroll() {
                 <Users className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">245</p>
+                <p className="text-2xl font-bold text-foreground">{totalStaff}</p>
                 <p className="text-sm text-muted-foreground">Total Staff</p>
               </div>
             </div>
