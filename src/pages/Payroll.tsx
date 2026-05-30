@@ -266,7 +266,7 @@ export default function Payroll() {
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">₹12.3L</p>
+                <p className="text-2xl font-bold text-foreground">{formatCompactCurrency(totalSalary)}</p>
                 <p className="text-sm text-muted-foreground">Total Payroll</p>
               </div>
             </div>
