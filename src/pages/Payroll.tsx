@@ -224,7 +224,7 @@ export default function Payroll() {
   };
 
   const totalSalary = filteredPayroll.reduce((sum, item) => sum + item.netSalary, 0);
-  const totalDeductions = filteredPayroll.reduce((sum, item) => sum + item.deductions, 0);
+  
   const paidCount = filteredPayroll.filter((item) => item.status === "paid").length;
   const pendingCount = filteredPayroll.filter((item) => item.status === "pending").length;
   const totalStaff = filteredPayroll.length;
