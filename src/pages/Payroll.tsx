@@ -305,7 +305,7 @@ export default function Payroll() {
                 <Users className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">245</p>
+                <p className="text-2xl font-bold text-foreground">{totalStaff}</p>
                 <p className="text-sm text-muted-foreground">Total Staff</p>
               </div>
             </div>
