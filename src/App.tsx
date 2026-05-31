@@ -16,6 +16,7 @@ import AddStaff from "./pages/AddStaff";
 import Fees from "./pages/Fees";
 import FeeStructure from "./pages/FeeStructure";
 import Payroll from "./pages/Payroll";
+import PayrollAudit from "./pages/PayrollAudit";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherHomework from "./pages/TeacherHomework";
 import TeacherMarks from "./pages/TeacherMarks";
@@ -84,6 +85,7 @@ const App = () => (
             {/* Payroll */}
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/payroll/process" element={<Payroll />} />
+            <Route path="/payroll/audit" element={<PayrollAudit />} />
             
             {/* Academics */}
             <Route path="/academics/classes" element={<Classes />} />

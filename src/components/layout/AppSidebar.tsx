@@ -90,6 +90,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "Salary Structure", href: "/payroll" },
       { title: "Process Payroll", href: "/payroll/process" },
+      { title: "Audit Report", href: "/payroll/audit" },
     ],
   },
   {

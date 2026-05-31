@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Download,
   FileText,
@@ -9,10 +10,14 @@ import {
   Wallet,
   Users,
   Calendar,
+  PieChart,
+  ScrollText,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -24,171 +29,43 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-const payrollData = [
-  {
-    id: "1",
-    name: "Dr. Ramesh Kumar",
-    type: "Teaching",
-    employeeId: "EMP001",
-    basicSalary: 65000,
-    hra: 15000,
-    allowances: 5000,
-    deductions: 8500,
-    netSalary: 76500,
-    status: "paid",
-  },
-  {
-    id: "2",
-    name: "Priya Sharma",
-    type: "Teaching",
-    employeeId: "EMP002",
-    basicSalary: 45000,
-    hra: 10000,
-    allowances: 3000,
-    deductions: 5800,
-    netSalary: 52200,
-    status: "paid",
-  },
-  {
-    id: "3",
-    name: "Suresh Patel",
-    type: "Teaching",
-    employeeId: "EMP003",
-    basicSalary: 55000,
-    hra: 12000,
-    allowances: 4000,
-    deductions: 7100,
-    netSalary: 63900,
-    status: "pending",
-  },
-  {
-    id: "4",
-    name: "Ramesh Yadav",
-    type: "Non-Teaching",
-    employeeId: "NTS001",
-    basicSalary: 25000,
-    hra: 5000,
-    allowances: 2000,
-    deductions: 3200,
-    netSalary: 28800,
-    status: "paid",
-  },
-  {
-    id: "5",
-    name: "Suresh Kumar",
-    type: "Non-Teaching",
-    employeeId: "NTS002",
-    basicSalary: 18000,
-    hra: 3000,
-    allowances: 1500,
-    deductions: 2250,
-    netSalary: 20250,
-    status: "pending",
-  },
-  {
-    id: "6",
-    name: "Geeta Devi",
-    type: "Non-Teaching",
-    employeeId: "NTS005",
-    basicSalary: 20000,
-    hra: 4000,
-    allowances: 2000,
-    deductions: 2600,
-    netSalary: 23400,
-    status: "hold",
-  },
-  {
-    id: "7",
-    name: "Dr. Meena Iyer",
-    type: "Teaching",
-    employeeId: "EMP005",
-    basicSalary: 60000,
-    hra: 14000,
-    allowances: 4500,
-    deductions: 7800,
-    netSalary: 70700,
-    status: "paid",
-  },
-  {
-    id: "8",
-    name: "Rajesh Nair",
-    type: "Teaching",
-    employeeId: "EMP006",
-    basicSalary: 48000,
-    hra: 11000,
-    allowances: 3500,
-    deductions: 6200,
-    netSalary: 56300,
-    status: "paid",
-  },
-  {
-    id: "9",
-    name: "Arvind Menon",
-    type: "Teaching",
-    employeeId: "EMP008",
-    basicSalary: 58000,
-    hra: 13000,
-    allowances: 4000,
-    deductions: 7500,
-    netSalary: 67500,
-    status: "pending",
-  },
-  {
-    id: "10",
-    name: "Mohan Lal",
-    type: "Non-Teaching",
-    employeeId: "NTS003",
-    basicSalary: 12000,
-    hra: 2000,
-    allowances: 1000,
-    deductions: 1500,
-    netSalary: 13500,
-    status: "paid",
-  },
-  {
-    id: "11",
-    name: "Anita Pawar",
-    type: "Non-Teaching",
-    employeeId: "NTS009",
-    basicSalary: 24000,
-    hra: 5000,
-    allowances: 2000,
-    deductions: 3100,
-    netSalary: 27900,
-    status: "paid",
-  },
-  {
-    id: "12",
-    name: "Deepak Verma",
-    type: "Non-Teaching",
-    employeeId: "NTS010",
-    basicSalary: 18500,
-    hra: 3500,
-    allowances: 1500,
-    deductions: 2350,
-    netSalary: 21150,
-    status: "pending",
-  },
-];
+import {
+  payrollData,
+  filterPayroll,
+  summarizePayroll,
+  expenseBreakdown,
+  formatINR,
+  formatCompactINR,
+  grossPay,
+  netPay,
+  MONTH_LABELS,
+  type PayrollMonth,
+  type PayrollTypeFilter,
+} from "@/data/payrollData";
 
 export default function Payroll() {
   const { toast } = useToast();
-  const [selectedMonth, setSelectedMonth] = useState("october");
-  const [filterType, setFilterType] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState<PayrollMonth>("october");
+  const [filterType, setFilterType] = useState<PayrollTypeFilter>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredPayroll = payrollData.filter((item) => {
-    if (filterType === "all") return true;
-    return item.type.toLowerCase().replace("-", "") === filterType;
+  const monthFiltered = filterPayroll(payrollData, filterType, selectedMonth);
+  const filteredPayroll = monthFiltered.filter((item) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(q) ||
+      item.employeeId.toLowerCase().includes(q)
+    );
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Cards and the expense breakdown reconcile against the SAME summary so the
+  // numbers can never drift apart from the table.
+  const summary = summarizePayroll(filteredPayroll);
+  const breakdown = expenseBreakdown(summary);
+  const progressPct = summary.count
+    ? Math.round((summary.paidCount / summary.count) * 100)
+    : 0;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -223,18 +100,6 @@ export default function Payroll() {
     });
   };
 
-  const totalSalary = filteredPayroll.reduce((sum, item) => sum + item.netSalary, 0);
-  
-  const paidCount = filteredPayroll.filter((item) => item.status === "paid").length;
-  const pendingCount = filteredPayroll.filter((item) => item.status === "pending").length;
-  const totalStaff = filteredPayroll.length;
-
-  const formatCompactCurrency = (amount: number) => {
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)}L`;
-    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
-    return `₹${amount}`;
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page header */}
@@ -246,6 +111,12 @@ export default function Payroll() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" asChild>
+            <Link to="/payroll/audit">
+              <ScrollText className="h-4 w-4" />
+              Audit Report
+            </Link>
+          </Button>
           <Button variant="outline" className="gap-2">
             <Download className="h-4 w-4" />
             Export
@@ -266,7 +137,7 @@ export default function Payroll() {
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{formatCompactCurrency(totalSalary)}</p>
+                <p className="text-2xl font-bold text-foreground">{formatCompactINR(summary.totalNet)}</p>
                 <p className="text-sm text-muted-foreground">Total Payroll</p>
               </div>
             </div>
@@ -279,7 +150,7 @@ export default function Payroll() {
                 <CheckCircle2 className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{paidCount}</p>
+                <p className="text-2xl font-bold text-foreground">{summary.paidCount}</p>
                 <p className="text-sm text-muted-foreground">Paid</p>
               </div>
             </div>
@@ -292,7 +163,7 @@ export default function Payroll() {
                 <Clock className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
+                <p className="text-2xl font-bold text-foreground">{summary.pendingCount}</p>
                 <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
@@ -305,7 +176,7 @@ export default function Payroll() {
                 <Users className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalStaff}</p>
+                <p className="text-2xl font-bold text-foreground">{summary.count}</p>
                 <p className="text-sm text-muted-foreground">Total Staff</p>
               </div>
             </div>
@@ -317,15 +188,17 @@ export default function Payroll() {
       <Card className="stat-card">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Payroll Progress - October 2024</span>
+            <span className="text-sm font-medium text-foreground">
+              Payroll Progress - {MONTH_LABELS[selectedMonth]}
+            </span>
             <span className="text-sm font-medium text-primary">
-              {Math.round((paidCount / filteredPayroll.length) * 100)}% Complete
+              {progressPct}% Complete
             </span>
           </div>
-          <Progress value={(paidCount / filteredPayroll.length) * 100} className="h-2" />
+          <Progress value={progressPct} className="h-2" />
           <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>{paidCount} paid</span>
-            <span>{pendingCount} pending</span>
+            <span>{summary.paidCount} paid</span>
+            <span>{summary.pendingCount} pending</span>
           </div>
         </CardContent>
       </Card>
@@ -336,9 +209,14 @@ export default function Payroll() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1 sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search staff..." className="pl-9" />
+              <Input
+                placeholder="Search staff..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <Select value={selectedMonth} onValueChange={(v) => setSelectedMonth(v as PayrollMonth)}>
               <SelectTrigger className="w-full sm:w-40">
                 <Calendar className="mr-2 h-4 w-4" />
                 <SelectValue />
@@ -349,7 +227,7 @@ export default function Payroll() {
                 <SelectItem value="august">August 2024</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterType} onValueChange={setFilterType}>
+            <Select value={filterType} onValueChange={(v) => setFilterType(v as PayrollTypeFilter)}>
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Staff Type" />
               </SelectTrigger>
@@ -363,6 +241,67 @@ export default function Payroll() {
         </CardContent>
       </Card>
 
+      {/* Salary Expense Breakdown */}
+      <Card className="stat-card">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Salary Expense Breakdown</h2>
+            </div>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                breakdown.reconciles
+                  ? "bg-success/10 text-success"
+                  : "bg-destructive/10 text-destructive",
+              )}
+            >
+              {breakdown.reconciles ? (
+                <CheckCircle className="h-3.5 w-3.5" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              )}
+              {breakdown.reconciles ? "Reconciled" : "Mismatch"}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {breakdown.components.map((c) => (
+              <div key={c.key}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">{c.label}</span>
+                  <span className="text-muted-foreground">
+                    {formatINR(c.amount)}{" "}
+                    <span className="text-xs">({c.percent.toFixed(1)}%)</span>
+                  </span>
+                </div>
+                <Progress value={c.percent} className="h-2" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-3 border-t pt-4 sm:grid-cols-3">
+            <div className="rounded-lg bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Gross Expense</p>
+              <p className="text-lg font-bold text-foreground">{formatINR(summary.totalGross)}</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Total Deductions</p>
+              <p className="text-lg font-bold text-destructive">-{formatINR(summary.totalDeductions)}</p>
+            </div>
+            <div className="rounded-lg bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground">Net Payroll</p>
+              <p className="text-lg font-bold text-primary">{formatINR(summary.totalNet)}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Components ({formatINR(breakdown.componentSum)}) reconcile to the Gross Expense and the
+            Total Payroll card ({formatINR(summary.totalNet)} after deductions).
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Payroll Table */}
       <Card className="stat-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -373,6 +312,7 @@ export default function Payroll() {
                 <th>Basic</th>
                 <th>HRA</th>
                 <th>Allowances</th>
+                <th>Gross</th>
                 <th>Deductions</th>
                 <th>Net Salary</th>
                 <th>Status</th>
@@ -408,11 +348,12 @@ export default function Payroll() {
                       </div>
                     </div>
                   </td>
-                  <td>{formatCurrency(item.basicSalary)}</td>
-                  <td>{formatCurrency(item.hra)}</td>
-                  <td className="text-success">+{formatCurrency(item.allowances)}</td>
-                  <td className="text-destructive">-{formatCurrency(item.deductions)}</td>
-                  <td className="font-semibold">{formatCurrency(item.netSalary)}</td>
+                  <td>{formatINR(item.basicSalary)}</td>
+                  <td>{formatINR(item.hra)}</td>
+                  <td className="text-success">+{formatINR(item.allowances)}</td>
+                  <td className="font-medium">{formatINR(grossPay(item))}</td>
+                  <td className="text-destructive">-{formatINR(item.deductions)}</td>
+                  <td className="font-semibold">{formatINR(netPay(item))}</td>
                   <td>
                     <span className={cn("flex items-center gap-1", getStatusBadge(item.status))}>
                       {getStatusIcon(item.status)}
@@ -429,19 +370,34 @@ export default function Payroll() {
                   </td>
                 </tr>
               ))}
+              {filteredPayroll.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                    No payroll records match the current filters.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Summary */}
         <div className="border-t bg-muted/30 px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredPayroll.length} staff members
+              Showing {summary.count} staff members
             </p>
-            <p className="text-lg font-bold text-foreground">
-              Total: {formatCurrency(totalSalary)}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+              <span className="text-muted-foreground">
+                Gross: <span className="font-medium text-foreground">{formatINR(summary.totalGross)}</span>
+              </span>
+              <span className="text-muted-foreground">
+                Deductions: <span className="font-medium text-destructive">-{formatINR(summary.totalDeductions)}</span>
+              </span>
+              <span className="text-lg font-bold text-foreground">
+                Total: {formatINR(summary.totalNet)}
+              </span>
+            </div>
           </div>
         </div>
       </Card>
