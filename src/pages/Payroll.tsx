@@ -312,7 +312,33 @@ export default function Payroll() {
         </CardContent>
       </Card>
 
-      {/* Payroll Table */}
+      {/* Month-over-Month Comparison */}
+      <Card className="stat-card">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Month-over-Month Comparison</h2>
+          </div>
+          {comparison.hasPrevious && comparison.previousMonth ? (
+            <>
+              <p className="mb-4 text-sm text-muted-foreground">
+                {MONTH_LABELS[selectedMonth]} vs {MONTH_LABELS[comparison.previousMonth]}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <ComparisonCell label="Total Payroll" metric={comparison.totalNet} positiveIsGood />
+                <ComparisonCell label="Total Deductions" metric={comparison.totalDeductions} positiveIsGood={false} />
+                <ComparisonCell label="Gross Expense" metric={comparison.totalGross} positiveIsGood />
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No earlier month is available to compare {MONTH_LABELS[selectedMonth]} against.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+
       <Card className="stat-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table">
