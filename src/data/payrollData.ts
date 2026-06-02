@@ -186,3 +186,102 @@ export function expenseBreakdown(summary: PayrollSummary): {
   const componentSum = roundINR(summary.totalBasic + summary.totalHra + summary.totalAllowances);
   return { components, componentSum, reconciles: componentSum === summary.totalGross };
 }
+
+// ---------------------------------------------------------------------------
+// Net-pay status filtering
+// ---------------------------------------------------------------------------
+
+export type PayrollStatusFilter = "all" | PayrollStatus;
+
+/** Filter records by their net-pay/payment status. */
+export function filterByStatus(
+  records: PayrollRecord[],
+  statusFilter: PayrollStatusFilter,
+): PayrollRecord[] {
+  if (statusFilter === "all") return records;
+  return records.filter((r) => r.status === statusFilter);
+}
+
+// ---------------------------------------------------------------------------
+// Role-based scoping
+// ---------------------------------------------------------------------------
+
+/**
+ * The employee currently signed in to the teacher panel. In a real backend
+ * this would come from the authenticated session; here it mirrors the demo
+ * teacher identity used across the teacher pages (Dr. Ramesh Kumar).
+ */
+export const CURRENT_TEACHER_EMPLOYEE_ID = "EMP001";
+
+/**
+ * Restrict the payroll dataset to what a given role is permitted to see.
+ * Admins get the full report; teachers only ever see their own records.
+ */
+export function scopeRecordsForRole(
+  records: PayrollRecord[],
+  role: "admin" | "teacher",
+  employeeId: string = CURRENT_TEACHER_EMPLOYEE_ID,
+): PayrollRecord[] {
+  if (role === "admin") return records;
+  return records.filter((r) => r.employeeId === employeeId);
+}
+
+// ---------------------------------------------------------------------------
+// Month-over-month comparison
+// ---------------------------------------------------------------------------
+
+/** Chronological order of months, newest first. */
+export const MONTH_ORDER: PayrollMonth[] = ["october", "september", "august"];
+
+/** The month immediately preceding the given one, or null if none exists. */
+export function previousMonth(month: PayrollMonth): PayrollMonth | null {
+  const idx = MONTH_ORDER.indexOf(month);
+  if (idx === -1 || idx === MONTH_ORDER.length - 1) return null;
+  return MONTH_ORDER[idx + 1];
+}
+
+export interface MetricDelta {
+  current: number;
+  previous: number;
+  /** Absolute change (current − previous). */
+  change: number;
+  /** Percentage change vs previous (0 when previous is 0). */
+  percent: number;
+}
+
+export interface PayrollComparison {
+  hasPrevious: boolean;
+  previousMonth: PayrollMonth | null;
+  totalGross: MetricDelta;
+  totalDeductions: MetricDelta;
+  totalNet: MetricDelta;
+}
+
+function delta(current: number, previous: number): MetricDelta {
+  const change = roundINR(current - previous);
+  const percent = previous === 0 ? 0 : (change / previous) * 100;
+  return { current, previous, change, percent };
+}
+
+/**
+ * Compare a month's payroll totals against the previous month. Both sides are
+ * filtered with the same type filter so the comparison stays apples-to-apples.
+ */
+export function comparePayrollToPreviousMonth(
+  records: PayrollRecord[],
+  month: PayrollMonth,
+  typeFilter: PayrollTypeFilter = "all",
+): PayrollComparison {
+  const prev = previousMonth(month);
+  const currentSummary = summarizePayroll(filterPayroll(records, typeFilter, month));
+  const previousSummary = prev
+    ? summarizePayroll(filterPayroll(records, typeFilter, prev))
+    : summarizePayroll([]);
+  return {
+    hasPrevious: prev !== null,
+    previousMonth: prev,
+    totalGross: delta(currentSummary.totalGross, previousSummary.totalGross),
+    totalDeductions: delta(currentSummary.totalDeductions, previousSummary.totalDeductions),
+    totalNet: delta(currentSummary.totalNet, previousSummary.totalNet),
+  };
+}
