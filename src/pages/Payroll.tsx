@@ -37,6 +37,7 @@ import {
   filterPayroll,
   summarizePayroll,
   expenseBreakdown,
+  comparePayrollToPreviousMonth,
   formatINR,
   formatCompactINR,
   grossPay,
@@ -44,6 +45,7 @@ import {
   MONTH_LABELS,
   type PayrollMonth,
   type PayrollTypeFilter,
+  type MetricDelta,
 } from "@/data/payrollData";
 
 export default function Payroll() {
