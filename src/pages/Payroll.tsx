@@ -14,6 +14,9 @@ import {
   ScrollText,
   CheckCircle,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +37,7 @@ import {
   filterPayroll,
   summarizePayroll,
   expenseBreakdown,
+  comparePayrollToPreviousMonth,
   formatINR,
   formatCompactINR,
   grossPay,
@@ -41,6 +45,7 @@ import {
   MONTH_LABELS,
   type PayrollMonth,
   type PayrollTypeFilter,
+  type MetricDelta,
 } from "@/data/payrollData";
 
 export default function Payroll() {
@@ -66,6 +71,11 @@ export default function Payroll() {
   const progressPct = summary.count
     ? Math.round((summary.paidCount / summary.count) * 100)
     : 0;
+
+  // Month-over-month change vs the previous month, using the same type filter
+  // so the comparison stays apples-to-apples.
+  const comparison = comparePayrollToPreviousMonth(payrollData, selectedMonth, filterType);
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -302,7 +312,33 @@ export default function Payroll() {
         </CardContent>
       </Card>
 
-      {/* Payroll Table */}
+      {/* Month-over-Month Comparison */}
+      <Card className="stat-card">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Month-over-Month Comparison</h2>
+          </div>
+          {comparison.hasPrevious && comparison.previousMonth ? (
+            <>
+              <p className="mb-4 text-sm text-muted-foreground">
+                {MONTH_LABELS[selectedMonth]} vs {MONTH_LABELS[comparison.previousMonth]}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <ComparisonCell label="Total Payroll" metric={comparison.totalNet} positiveIsGood />
+                <ComparisonCell label="Total Deductions" metric={comparison.totalDeductions} positiveIsGood={false} />
+                <ComparisonCell label="Gross Expense" metric={comparison.totalGross} positiveIsGood />
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No earlier month is available to compare {MONTH_LABELS[selectedMonth]} against.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+
       <Card className="stat-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -404,3 +440,43 @@ export default function Payroll() {
     </div>
   );
 }
+
+function ComparisonCell({
+  label,
+  metric,
+  positiveIsGood,
+}: {
+  label: string;
+  metric: MetricDelta;
+  positiveIsGood: boolean;
+}) {
+  const up = metric.change > 0;
+  const flat = metric.change === 0;
+  // Whether the direction of change is "good" (green) or "bad" (red).
+  const good = flat ? null : up === positiveIsGood;
+  const toneClass = good === null ? "text-muted-foreground" : good ? "text-success" : "text-destructive";
+  const Icon = flat ? Minus : up ? TrendingUp : TrendingDown;
+  const sign = up ? "+" : metric.change < 0 ? "-" : "";
+
+  return (
+    <div className="rounded-lg bg-muted/40 p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-lg font-bold text-foreground">{formatINR(metric.current)}</p>
+      <div className={cn("mt-1 flex items-center gap-1 text-xs font-medium", toneClass)}>
+        <Icon className="h-3.5 w-3.5" />
+        <span>
+          {sign}
+          {formatINR(Math.abs(metric.change))}
+        </span>
+        <span className="text-muted-foreground">
+          ({metric.percent >= 0 ? "+" : ""}
+          {metric.percent.toFixed(1)}%)
+        </span>
+      </div>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        prev {formatINR(metric.previous)}
+      </p>
+    </div>
+  );
+}
+
