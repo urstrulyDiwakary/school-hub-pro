@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   payrollData,
   filterPayroll,
+  filterByStatus,
+  scopeRecordsForRole,
+  comparePayrollToPreviousMonth,
+  previousMonth,
   summarizePayroll,
   expenseBreakdown,
   grossPay,
@@ -9,6 +13,7 @@ import {
   roundINR,
   formatINR,
   formatCompactINR,
+  CURRENT_TEACHER_EMPLOYEE_ID,
   type PayrollMonth,
   type PayrollTypeFilter,
 } from "./payrollData";
