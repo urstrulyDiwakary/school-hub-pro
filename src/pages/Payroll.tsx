@@ -72,6 +72,11 @@ export default function Payroll() {
     ? Math.round((summary.paidCount / summary.count) * 100)
     : 0;
 
+  // Month-over-month change vs the previous month, using the same type filter
+  // so the comparison stays apples-to-apples.
+  const comparison = comparePayrollToPreviousMonth(payrollData, selectedMonth, filterType);
+
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "paid":
