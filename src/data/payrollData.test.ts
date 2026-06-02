@@ -136,3 +136,72 @@ describe("INR formatting + rounding rules", () => {
     expect(formatCompactINR(540)).toBe("₹540");
   });
 });
+
+describe("net-pay status filtering", () => {
+  it("returns all records for 'all'", () => {
+    expect(filterByStatus(payrollData, "all")).toHaveLength(payrollData.length);
+  });
+
+  it("returns only records matching the given status", () => {
+    for (const status of ["paid", "pending", "hold"] as const) {
+      const filtered = filterByStatus(payrollData, status);
+      expect(filtered.every((r) => r.status === status)).toBe(true);
+    }
+  });
+
+  it("paid + pending + hold subsets reconstruct the full set", () => {
+    const total =
+      filterByStatus(payrollData, "paid").length +
+      filterByStatus(payrollData, "pending").length +
+      filterByStatus(payrollData, "hold").length;
+    expect(total).toBe(payrollData.length);
+  });
+});
+
+describe("role-based scoping", () => {
+  it("admins see every record", () => {
+    expect(scopeRecordsForRole(payrollData, "admin")).toHaveLength(payrollData.length);
+  });
+
+  it("teachers only see their own records", () => {
+    const scoped = scopeRecordsForRole(payrollData, "teacher");
+    expect(scoped.length).toBeGreaterThan(0);
+    expect(scoped.every((r) => r.employeeId === CURRENT_TEACHER_EMPLOYEE_ID)).toBe(true);
+  });
+
+  it("teacher scope is a strict subset of admin scope", () => {
+    const adminCount = scopeRecordsForRole(payrollData, "admin").length;
+    const teacherCount = scopeRecordsForRole(payrollData, "teacher").length;
+    expect(teacherCount).toBeLessThan(adminCount);
+  });
+});
+
+describe("month-over-month comparison", () => {
+  it("knows the previous month", () => {
+    expect(previousMonth("october")).toBe("september");
+    expect(previousMonth("september")).toBe("august");
+    expect(previousMonth("august")).toBeNull();
+  });
+
+  it("change equals current minus previous for each metric", () => {
+    const cmp = comparePayrollToPreviousMonth(payrollData, "october", "all");
+    const current = summarizePayroll(filterPayroll(payrollData, "all", "october"));
+    const previous = summarizePayroll(filterPayroll(payrollData, "all", "september"));
+    expect(cmp.hasPrevious).toBe(true);
+    expect(cmp.totalNet.change).toBe(current.totalNet - previous.totalNet);
+    expect(cmp.totalGross.change).toBe(current.totalGross - previous.totalGross);
+    expect(cmp.totalDeductions.change).toBe(current.totalDeductions - previous.totalDeductions);
+  });
+
+  it("flags when there is no previous month", () => {
+    const cmp = comparePayrollToPreviousMonth(payrollData, "august", "all");
+    expect(cmp.hasPrevious).toBe(false);
+    expect(cmp.previousMonth).toBeNull();
+  });
+
+  it("respects the type filter on both sides", () => {
+    const cmp = comparePayrollToPreviousMonth(payrollData, "october", "teaching");
+    const current = summarizePayroll(filterPayroll(payrollData, "teaching", "october"));
+    expect(cmp.totalNet.current).toBe(current.totalNet);
+  });
+});
