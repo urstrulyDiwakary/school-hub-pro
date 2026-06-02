@@ -14,6 +14,9 @@ import {
   ScrollText,
   CheckCircle,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
