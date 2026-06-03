@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ArrowLeft, Download, FileText, ScrollText, Clock, ShieldCheck, UserCog } from "lucide-react";
+import { ArrowLeft, Download, FileText, ScrollText, Clock, ShieldCheck, UserCog, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,19 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   paid: "default",
   pending: "secondary",
   hold: "destructive",
+};
+
+const TYPE_LABELS: Record<PayrollTypeFilter, string> = {
+  all: "All Staff",
+  teaching: "Teaching",
+  nonteaching: "Non-Teaching",
+};
+
+const STATUS_LABELS: Record<PayrollStatusFilter, string> = {
+  all: "All Statuses",
+  paid: "Paid",
+  pending: "Pending",
+  hold: "Hold",
 };
 
 export default function PayrollAudit() {
