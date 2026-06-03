@@ -18,6 +18,8 @@ export interface PayrollRecord {
   allowances: number;
   deductions: number;
   status: PayrollStatus;
+  /** ISO timestamp of when the status was last changed. */
+  statusUpdatedAt: string;
 }
 
 export type PayrollMonth = "october" | "september" | "august";
@@ -29,27 +31,27 @@ export const MONTH_LABELS: Record<PayrollMonth, string> = {
 };
 
 export const payrollData: PayrollRecord[] = [
-  { id: "1", name: "Dr. Ramesh Kumar", type: "Teaching", employeeId: "EMP001", month: "october", basicSalary: 65000, hra: 15000, allowances: 5000, deductions: 8500, status: "paid" },
-  { id: "2", name: "Priya Sharma", type: "Teaching", employeeId: "EMP002", month: "october", basicSalary: 45000, hra: 10000, allowances: 3000, deductions: 5800, status: "paid" },
-  { id: "3", name: "Suresh Patel", type: "Teaching", employeeId: "EMP003", month: "october", basicSalary: 55000, hra: 12000, allowances: 4000, deductions: 7100, status: "pending" },
-  { id: "4", name: "Ramesh Yadav", type: "Non-Teaching", employeeId: "NTS001", month: "october", basicSalary: 25000, hra: 5000, allowances: 2000, deductions: 3200, status: "paid" },
-  { id: "5", name: "Suresh Kumar", type: "Non-Teaching", employeeId: "NTS002", month: "october", basicSalary: 18000, hra: 3000, allowances: 1500, deductions: 2250, status: "pending" },
-  { id: "6", name: "Geeta Devi", type: "Non-Teaching", employeeId: "NTS005", month: "october", basicSalary: 20000, hra: 4000, allowances: 2000, deductions: 2600, status: "hold" },
-  { id: "7", name: "Dr. Meena Iyer", type: "Teaching", employeeId: "EMP005", month: "october", basicSalary: 60000, hra: 14000, allowances: 4500, deductions: 7800, status: "paid" },
-  { id: "8", name: "Rajesh Nair", type: "Teaching", employeeId: "EMP006", month: "october", basicSalary: 48000, hra: 11000, allowances: 3500, deductions: 6200, status: "paid" },
-  { id: "9", name: "Arvind Menon", type: "Teaching", employeeId: "EMP008", month: "october", basicSalary: 58000, hra: 13000, allowances: 4000, deductions: 7500, status: "pending" },
-  { id: "10", name: "Mohan Lal", type: "Non-Teaching", employeeId: "NTS003", month: "october", basicSalary: 12000, hra: 2000, allowances: 1000, deductions: 1500, status: "paid" },
-  { id: "11", name: "Anita Pawar", type: "Non-Teaching", employeeId: "NTS009", month: "october", basicSalary: 24000, hra: 5000, allowances: 2000, deductions: 3100, status: "paid" },
-  { id: "12", name: "Deepak Verma", type: "Non-Teaching", employeeId: "NTS010", month: "october", basicSalary: 18500, hra: 3500, allowances: 1500, deductions: 2350, status: "pending" },
+  { id: "1", name: "Dr. Ramesh Kumar", type: "Teaching", employeeId: "EMP001", month: "october", basicSalary: 65000, hra: 15000, allowances: 5000, deductions: 8500, status: "paid", statusUpdatedAt: "2024-10-31T14:20:00+05:30" },
+  { id: "2", name: "Priya Sharma", type: "Teaching", employeeId: "EMP002", month: "october", basicSalary: 45000, hra: 10000, allowances: 3000, deductions: 5800, status: "paid", statusUpdatedAt: "2024-10-31T14:22:00+05:30" },
+  { id: "3", name: "Suresh Patel", type: "Teaching", employeeId: "EMP003", month: "october", basicSalary: 55000, hra: 12000, allowances: 4000, deductions: 7100, status: "pending", statusUpdatedAt: "2024-11-02T09:15:00+05:30" },
+  { id: "4", name: "Ramesh Yadav", type: "Non-Teaching", employeeId: "NTS001", month: "october", basicSalary: 25000, hra: 5000, allowances: 2000, deductions: 3200, status: "paid", statusUpdatedAt: "2024-10-31T15:05:00+05:30" },
+  { id: "5", name: "Suresh Kumar", type: "Non-Teaching", employeeId: "NTS002", month: "october", basicSalary: 18000, hra: 3000, allowances: 1500, deductions: 2250, status: "pending", statusUpdatedAt: "2024-11-01T11:40:00+05:30" },
+  { id: "6", name: "Geeta Devi", type: "Non-Teaching", employeeId: "NTS005", month: "october", basicSalary: 20000, hra: 4000, allowances: 2000, deductions: 2600, status: "hold", statusUpdatedAt: "2024-11-03T16:30:00+05:30" },
+  { id: "7", name: "Dr. Meena Iyer", type: "Teaching", employeeId: "EMP005", month: "october", basicSalary: 60000, hra: 14000, allowances: 4500, deductions: 7800, status: "paid", statusUpdatedAt: "2024-10-31T14:25:00+05:30" },
+  { id: "8", name: "Rajesh Nair", type: "Teaching", employeeId: "EMP006", month: "october", basicSalary: 48000, hra: 11000, allowances: 3500, deductions: 6200, status: "paid", statusUpdatedAt: "2024-10-31T14:28:00+05:30" },
+  { id: "9", name: "Arvind Menon", type: "Teaching", employeeId: "EMP008", month: "october", basicSalary: 58000, hra: 13000, allowances: 4000, deductions: 7500, status: "pending", statusUpdatedAt: "2024-11-02T10:05:00+05:30" },
+  { id: "10", name: "Mohan Lal", type: "Non-Teaching", employeeId: "NTS003", month: "october", basicSalary: 12000, hra: 2000, allowances: 1000, deductions: 1500, status: "paid", statusUpdatedAt: "2024-10-31T15:10:00+05:30" },
+  { id: "11", name: "Anita Pawar", type: "Non-Teaching", employeeId: "NTS009", month: "october", basicSalary: 24000, hra: 5000, allowances: 2000, deductions: 3100, status: "paid", statusUpdatedAt: "2024-10-31T15:12:00+05:30" },
+  { id: "12", name: "Deepak Verma", type: "Non-Teaching", employeeId: "NTS010", month: "october", basicSalary: 18500, hra: 3500, allowances: 1500, deductions: 2350, status: "pending", statusUpdatedAt: "2024-11-01T12:00:00+05:30" },
   // September records
-  { id: "13", name: "Dr. Ramesh Kumar", type: "Teaching", employeeId: "EMP001", month: "september", basicSalary: 65000, hra: 15000, allowances: 4500, deductions: 8400, status: "paid" },
-  { id: "14", name: "Priya Sharma", type: "Teaching", employeeId: "EMP002", month: "september", basicSalary: 45000, hra: 10000, allowances: 2800, deductions: 5750, status: "paid" },
-  { id: "15", name: "Ramesh Yadav", type: "Non-Teaching", employeeId: "NTS001", month: "september", basicSalary: 25000, hra: 5000, allowances: 1800, deductions: 3150, status: "paid" },
-  { id: "16", name: "Mohan Lal", type: "Non-Teaching", employeeId: "NTS003", month: "september", basicSalary: 12000, hra: 2000, allowances: 800, deductions: 1450, status: "paid" },
+  { id: "13", name: "Dr. Ramesh Kumar", type: "Teaching", employeeId: "EMP001", month: "september", basicSalary: 65000, hra: 15000, allowances: 4500, deductions: 8400, status: "paid", statusUpdatedAt: "2024-09-30T14:18:00+05:30" },
+  { id: "14", name: "Priya Sharma", type: "Teaching", employeeId: "EMP002", month: "september", basicSalary: 45000, hra: 10000, allowances: 2800, deductions: 5750, status: "paid", statusUpdatedAt: "2024-09-30T14:21:00+05:30" },
+  { id: "15", name: "Ramesh Yadav", type: "Non-Teaching", employeeId: "NTS001", month: "september", basicSalary: 25000, hra: 5000, allowances: 1800, deductions: 3150, status: "paid", statusUpdatedAt: "2024-09-30T15:02:00+05:30" },
+  { id: "16", name: "Mohan Lal", type: "Non-Teaching", employeeId: "NTS003", month: "september", basicSalary: 12000, hra: 2000, allowances: 800, deductions: 1450, status: "paid", statusUpdatedAt: "2024-09-30T15:08:00+05:30" },
   // August records
-  { id: "17", name: "Dr. Meena Iyer", type: "Teaching", employeeId: "EMP005", month: "august", basicSalary: 60000, hra: 14000, allowances: 4000, deductions: 7700, status: "paid" },
-  { id: "18", name: "Rajesh Nair", type: "Teaching", employeeId: "EMP006", month: "august", basicSalary: 48000, hra: 11000, allowances: 3200, deductions: 6150, status: "paid" },
-  { id: "19", name: "Anita Pawar", type: "Non-Teaching", employeeId: "NTS009", month: "august", basicSalary: 24000, hra: 5000, allowances: 1800, deductions: 3050, status: "paid" },
+  { id: "17", name: "Dr. Meena Iyer", type: "Teaching", employeeId: "EMP005", month: "august", basicSalary: 60000, hra: 14000, allowances: 4000, deductions: 7700, status: "paid", statusUpdatedAt: "2024-08-31T14:15:00+05:30" },
+  { id: "18", name: "Rajesh Nair", type: "Teaching", employeeId: "EMP006", month: "august", basicSalary: 48000, hra: 11000, allowances: 3200, deductions: 6150, status: "paid", statusUpdatedAt: "2024-08-31T14:19:00+05:30" },
+  { id: "19", name: "Anita Pawar", type: "Non-Teaching", employeeId: "NTS009", month: "august", basicSalary: 24000, hra: 5000, allowances: 1800, deductions: 3050, status: "paid", statusUpdatedAt: "2024-08-31T15:01:00+05:30" },
 ];
 
 /**

@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ArrowLeft, Download, FileText, ScrollText, Clock, ShieldCheck, UserCog } from "lucide-react";
+import { ArrowLeft, Download, FileText, ScrollText, Clock, ShieldCheck, UserCog, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,19 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   hold: "destructive",
 };
 
+const TYPE_LABELS: Record<PayrollTypeFilter, string> = {
+  all: "All Staff",
+  teaching: "Teaching",
+  nonteaching: "Non-Teaching",
+};
+
+const STATUS_LABELS: Record<PayrollStatusFilter, string> = {
+  all: "All Statuses",
+  paid: "Paid",
+  pending: "Pending",
+  hold: "Hold",
+};
+
 export default function PayrollAudit() {
   const { toast } = useToast();
   const [selectedMonth, setSelectedMonth] = useState<PayrollMonth>("october");
@@ -72,10 +85,48 @@ export default function PayrollAudit() {
   );
   const summary = summarizePayroll(records);
 
+  // Active filter chips — only show filters that deviate from the default.
+  interface FilterChip {
+    key: string;
+    label: string;
+    onClear: () => void;
+  }
+  const activeChips: FilterChip[] = [];
+  if (isAdmin && filterType !== "all") {
+    activeChips.push({
+      key: "type",
+      label: `Type: ${TYPE_LABELS[filterType]}`,
+      onClear: () => setFilterType("all"),
+    });
+  }
+  if (statusFilter !== "all") {
+    activeChips.push({
+      key: "status",
+      label: `Status: ${STATUS_LABELS[statusFilter]}`,
+      onClear: () => setStatusFilter("all"),
+    });
+  }
+  const hasActiveFilters = activeChips.length > 0;
+  const clearAllFilters = () => {
+    setFilterType("all");
+    setStatusFilter("all");
+  };
+
+  const filtersSummary =
+    `Month: ${MONTH_LABELS[selectedMonth]}` +
+    ` | Type: ${isAdmin ? TYPE_LABELS[filterType] : "My records"}` +
+    ` | Status: ${STATUS_LABELS[statusFilter]}`;
+
   const exportFilename = (ext: string) =>
     `payroll-audit-${selectedMonth}-${format(generatedAt, "yyyyMMdd-HHmmss")}.${ext}`;
 
   const handleExportCsv = () => {
+    const metaRows = [
+      ["Payroll Audit Report"],
+      [`Filters: ${filtersSummary}`],
+      [`Generated At: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`],
+      [],
+    ];
     const header = [
       "Employee ID",
       "Name",
@@ -85,6 +136,7 @@ export default function PayrollAudit() {
       "Deductions",
       "Net Pay",
       "Status",
+      "Last Updated",
       "Generated At",
     ];
     const rows = records.map((r) => [
@@ -96,6 +148,7 @@ export default function PayrollAudit() {
       r.deductions,
       netPay(r),
       r.status,
+      format(new Date(r.statusUpdatedAt), "dd MMM yyyy, HH:mm"),
       generatedAt.toISOString(),
     ]);
     rows.push([
@@ -107,9 +160,10 @@ export default function PayrollAudit() {
       summary.totalDeductions,
       summary.totalNet,
       `${summary.count} records`,
+      "",
       generatedAt.toISOString(),
     ]);
-    const csv = [header, ...rows]
+    const csv = [...metaRows, header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -121,7 +175,7 @@ export default function PayrollAudit() {
     URL.revokeObjectURL(url);
     toast({
       title: "Audit report exported",
-      description: `${records.length} records exported to CSV with computed totals.`,
+      description: `${records.length} records exported to CSV with filters, totals and timestamp.`,
     });
   };
 
@@ -146,7 +200,7 @@ export default function PayrollAudit() {
 
     autoTable(doc, {
       startY: 70 + metaLines.length * 14 + 8,
-      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status"]],
+      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status", "Last Updated"]],
       body: records.map((r) => [
         r.name,
         r.employeeId,
@@ -156,6 +210,7 @@ export default function PayrollAudit() {
         `-${formatINR(r.deductions)}`,
         formatINR(netPay(r)),
         r.status,
+        format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm"),
       ]),
       foot: [
         [
@@ -166,6 +221,7 @@ export default function PayrollAudit() {
           formatINR(summary.totalGross),
           `-${formatINR(summary.totalDeductions)}`,
           formatINR(summary.totalNet),
+          "",
           "",
         ],
       ],
@@ -292,6 +348,35 @@ export default function PayrollAudit() {
         </CardContent>
       </Card>
 
+      {/* Active filter chips */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {activeChips.map((chip) => (
+            <Badge
+              key={chip.key}
+              variant="secondary"
+              className="gap-1 pl-2.5 pr-1.5 py-1 text-xs font-medium"
+            >
+              {chip.label}
+              <button
+                type="button"
+                aria-label={`Remove ${chip.label} filter`}
+                onClick={chip.onClear}
+                className="rounded-full p-0.5 transition-colors hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={clearAllFilters}>
+            <X className="h-3 w-3" />
+            Clear all
+          </Button>
+        </div>
+      )}
+
+
       {/* Audit table */}
       <Card className="stat-card overflow-hidden">
         <Table>
@@ -303,7 +388,7 @@ export default function PayrollAudit() {
               <TableHead className="text-right">Gross</TableHead>
               <TableHead className="text-right">Deductions</TableHead>
               <TableHead className="text-right">Net Pay</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Status Timeline</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -319,9 +404,18 @@ export default function PayrollAudit() {
                 <TableCell className="text-right text-destructive">-{formatINR(r.deductions)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatINR(netPay(r))}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant[r.status]} className="capitalize">
-                    {r.status}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant={statusVariant[r.status]} className="w-fit capitalize">
+                      {r.status}
+                    </Badge>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm")}
+                      <span className="text-muted-foreground/70">
+                        ({formatDistanceToNow(new Date(r.statusUpdatedAt), { addSuffix: true })})
+                      </span>
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
