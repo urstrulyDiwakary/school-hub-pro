@@ -85,10 +85,48 @@ export default function PayrollAudit() {
   );
   const summary = summarizePayroll(records);
 
+  // Active filter chips — only show filters that deviate from the default.
+  interface FilterChip {
+    key: string;
+    label: string;
+    onClear: () => void;
+  }
+  const activeChips: FilterChip[] = [];
+  if (isAdmin && filterType !== "all") {
+    activeChips.push({
+      key: "type",
+      label: `Type: ${TYPE_LABELS[filterType]}`,
+      onClear: () => setFilterType("all"),
+    });
+  }
+  if (statusFilter !== "all") {
+    activeChips.push({
+      key: "status",
+      label: `Status: ${STATUS_LABELS[statusFilter]}`,
+      onClear: () => setStatusFilter("all"),
+    });
+  }
+  const hasActiveFilters = activeChips.length > 0;
+  const clearAllFilters = () => {
+    setFilterType("all");
+    setStatusFilter("all");
+  };
+
+  const filtersSummary =
+    `Month: ${MONTH_LABELS[selectedMonth]}` +
+    ` | Type: ${isAdmin ? TYPE_LABELS[filterType] : "My records"}` +
+    ` | Status: ${STATUS_LABELS[statusFilter]}`;
+
   const exportFilename = (ext: string) =>
     `payroll-audit-${selectedMonth}-${format(generatedAt, "yyyyMMdd-HHmmss")}.${ext}`;
 
   const handleExportCsv = () => {
+    const metaRows = [
+      ["Payroll Audit Report"],
+      [`Filters: ${filtersSummary}`],
+      [`Generated At: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`],
+      [],
+    ];
     const header = [
       "Employee ID",
       "Name",
@@ -98,6 +136,7 @@ export default function PayrollAudit() {
       "Deductions",
       "Net Pay",
       "Status",
+      "Last Updated",
       "Generated At",
     ];
     const rows = records.map((r) => [
@@ -109,6 +148,7 @@ export default function PayrollAudit() {
       r.deductions,
       netPay(r),
       r.status,
+      format(new Date(r.statusUpdatedAt), "dd MMM yyyy, HH:mm"),
       generatedAt.toISOString(),
     ]);
     rows.push([
@@ -120,9 +160,10 @@ export default function PayrollAudit() {
       summary.totalDeductions,
       summary.totalNet,
       `${summary.count} records`,
+      "",
       generatedAt.toISOString(),
     ]);
-    const csv = [header, ...rows]
+    const csv = [...metaRows, header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -134,7 +175,7 @@ export default function PayrollAudit() {
     URL.revokeObjectURL(url);
     toast({
       title: "Audit report exported",
-      description: `${records.length} records exported to CSV with computed totals.`,
+      description: `${records.length} records exported to CSV with filters, totals and timestamp.`,
     });
   };
 
