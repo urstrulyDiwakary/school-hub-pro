@@ -18,6 +18,8 @@ export interface PayrollRecord {
   allowances: number;
   deductions: number;
   status: PayrollStatus;
+  /** ISO timestamp of when the status was last changed. */
+  statusUpdatedAt: string;
 }
 
 export type PayrollMonth = "october" | "september" | "august";
