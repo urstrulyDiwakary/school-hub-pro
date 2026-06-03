@@ -200,7 +200,7 @@ export default function PayrollAudit() {
 
     autoTable(doc, {
       startY: 70 + metaLines.length * 14 + 8,
-      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status"]],
+      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status", "Last Updated"]],
       body: records.map((r) => [
         r.name,
         r.employeeId,
@@ -210,6 +210,7 @@ export default function PayrollAudit() {
         `-${formatINR(r.deductions)}`,
         formatINR(netPay(r)),
         r.status,
+        format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm"),
       ]),
       foot: [
         [
@@ -220,6 +221,7 @@ export default function PayrollAudit() {
           formatINR(summary.totalGross),
           `-${formatINR(summary.totalDeductions)}`,
           formatINR(summary.totalNet),
+          "",
           "",
         ],
       ],
