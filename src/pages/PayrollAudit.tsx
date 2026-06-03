@@ -386,7 +386,7 @@ export default function PayrollAudit() {
               <TableHead className="text-right">Gross</TableHead>
               <TableHead className="text-right">Deductions</TableHead>
               <TableHead className="text-right">Net Pay</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Status Timeline</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -402,9 +402,18 @@ export default function PayrollAudit() {
                 <TableCell className="text-right text-destructive">-{formatINR(r.deductions)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatINR(netPay(r))}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant[r.status]} className="capitalize">
-                    {r.status}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant={statusVariant[r.status]} className="w-fit capitalize">
+                      {r.status}
+                    </Badge>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm")}
+                      <span className="text-muted-foreground/70">
+                        ({formatDistanceToNow(new Date(r.statusUpdatedAt), { addSuffix: true })})
+                      </span>
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
