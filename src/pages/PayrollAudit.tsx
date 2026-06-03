@@ -346,6 +346,35 @@ export default function PayrollAudit() {
         </CardContent>
       </Card>
 
+      {/* Active filter chips */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {activeChips.map((chip) => (
+            <Badge
+              key={chip.key}
+              variant="secondary"
+              className="gap-1 pl-2.5 pr-1.5 py-1 text-xs font-medium"
+            >
+              {chip.label}
+              <button
+                type="button"
+                aria-label={`Remove ${chip.label} filter`}
+                onClick={chip.onClear}
+                className="rounded-full p-0.5 transition-colors hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={clearAllFilters}>
+            <X className="h-3 w-3" />
+            Clear all
+          </Button>
+        </div>
+      )}
+
+
       {/* Audit table */}
       <Card className="stat-card overflow-hidden">
         <Table>
