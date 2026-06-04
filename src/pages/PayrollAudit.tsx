@@ -134,6 +134,7 @@ export default function PayrollAudit() {
   const [sortKey, setSortKey] = useState<SortKey | null>(initial.sortKey);
   const [sortDir, setSortDir] = useState<SortDir>(initial.sortDir);
   const [historyRecord, setHistoryRecord] = useState<PayrollRecord | null>(null);
+  const [search, setSearch] = useState("");
 
   // Role decides what slice of the data is even available. Admins see the full
   // school report; teachers can only ever see their own payroll records.
