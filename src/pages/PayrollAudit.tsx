@@ -486,6 +486,37 @@ export default function PayrollAudit() {
         </CardContent>
       </Card>
 
+      {/* Search */}
+      <div className="relative">
+        <label htmlFor="payroll-audit-search" className="sr-only">
+          Search payroll records by name, status or timestamp
+        </label>
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <Input
+          id="payroll-audit-search"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by staff name, status or timestamp…"
+          className="pl-9 pr-9"
+        />
+        {search && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Clear search"
+            onClick={() => setSearch("")}
+            className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
       {/* Active filter chips */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
