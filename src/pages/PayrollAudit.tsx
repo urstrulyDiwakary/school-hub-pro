@@ -161,10 +161,30 @@ export default function PayrollAudit() {
 
   // 1) scope to role  2) month + type filter  3) net-pay status filter.
   const roleScoped = useMemo(() => scopeRecordsForRole(payrollData, role), [role]);
-  const filteredRecords = filterByStatus(
+  const baseRecords = filterByStatus(
     filterPayroll(roleScoped, isAdmin ? filterType : "all", selectedMonth),
     statusFilter,
   );
+
+  // Free-text search across staff name, employee id, status and timestamp.
+  const query = search.trim().toLowerCase();
+  const filteredRecords = query
+    ? baseRecords.filter((r) => {
+        const haystack = [
+          r.name,
+          r.employeeId,
+          r.type,
+          r.status,
+          formatLastUpdated(r.statusUpdatedAt),
+          format(new Date(r.statusUpdatedAt), "dd MMM yyyy, HH:mm"),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+    : baseRecords;
+
+
 
   // Apply column sorting (Status Timeline / Last Updated).
   const records = useMemo(() => {
