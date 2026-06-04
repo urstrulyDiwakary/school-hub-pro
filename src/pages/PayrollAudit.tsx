@@ -17,9 +17,11 @@ import {
   ChevronsUpDown,
   History,
   ArrowRight,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -132,6 +134,7 @@ export default function PayrollAudit() {
   const [sortKey, setSortKey] = useState<SortKey | null>(initial.sortKey);
   const [sortDir, setSortDir] = useState<SortDir>(initial.sortDir);
   const [historyRecord, setHistoryRecord] = useState<PayrollRecord | null>(null);
+  const [search, setSearch] = useState("");
 
   // Role decides what slice of the data is even available. Admins see the full
   // school report; teachers can only ever see their own payroll records.
@@ -158,10 +161,30 @@ export default function PayrollAudit() {
 
   // 1) scope to role  2) month + type filter  3) net-pay status filter.
   const roleScoped = useMemo(() => scopeRecordsForRole(payrollData, role), [role]);
-  const filteredRecords = filterByStatus(
+  const baseRecords = filterByStatus(
     filterPayroll(roleScoped, isAdmin ? filterType : "all", selectedMonth),
     statusFilter,
   );
+
+  // Free-text search across staff name, employee id, status and timestamp.
+  const query = search.trim().toLowerCase();
+  const filteredRecords = query
+    ? baseRecords.filter((r) => {
+        const haystack = [
+          r.name,
+          r.employeeId,
+          r.type,
+          r.status,
+          formatLastUpdated(r.statusUpdatedAt),
+          format(new Date(r.statusUpdatedAt), "dd MMM yyyy, HH:mm"),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+    : baseRecords;
+
+
 
   // Apply column sorting (Status Timeline / Last Updated).
   const records = useMemo(() => {
@@ -463,6 +486,37 @@ export default function PayrollAudit() {
         </CardContent>
       </Card>
 
+      {/* Search */}
+      <div className="relative">
+        <label htmlFor="payroll-audit-search" className="sr-only">
+          Search payroll records by name, status or timestamp
+        </label>
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <Input
+          id="payroll-audit-search"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by staff name, status or timestamp…"
+          className="pl-9 pr-9"
+        />
+        {search && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Clear search"
+            onClick={() => setSearch("")}
+            className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
       {/* Active filter chips */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
@@ -606,39 +660,61 @@ export default function PayrollAudit() {
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <ol className="relative space-y-4 border-l border-border pl-6">
-            {historyEntries.map((entry, i) => (
-              <li key={i} className="relative">
-                <span className="absolute -left-[1.55rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary" />
-                <div className="flex flex-wrap items-center gap-2">
-                  {entry.from ? (
-                    <>
-                      <Badge variant={statusVariant[entry.from]} className="capitalize">
-                        {entry.from}
-                      </Badge>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Badge variant={statusVariant[entry.to]} className="capitalize">
-                        {entry.to}
-                      </Badge>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xs font-medium text-muted-foreground">Created as</span>
-                      <Badge variant={statusVariant[entry.to]} className="capitalize">
-                        {entry.to}
-                      </Badge>
-                    </>
-                  )}
-                </div>
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {format(new Date(entry.at), "dd MMM yyyy, HH:mm")}
-                  <span className="text-muted-foreground/70">
-                    ({formatDistanceToNow(new Date(entry.at), { addSuffix: true })})
-                  </span>
-                </p>
-              </li>
-            ))}
+          <ol
+            className="relative space-y-4 border-l border-border pl-6"
+            aria-label={
+              historyRecord
+                ? `Status change history for ${historyRecord.name}`
+                : "Status change history"
+            }
+          >
+            {historyEntries.map((entry, i) => {
+              const when = `${format(new Date(entry.at), "dd MMM yyyy, HH:mm")} (${formatDistanceToNow(
+                new Date(entry.at),
+                { addSuffix: true },
+              )})`;
+              const itemLabel = entry.from
+                ? `Changed from ${entry.from} to ${entry.to} on ${when}`
+                : `Created as ${entry.to} on ${when}`;
+              return (
+                <li key={i} className="relative" aria-label={itemLabel}>
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-[1.55rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
+                  />
+                  <div className="flex flex-wrap items-center gap-2" aria-hidden="true">
+                    {entry.from ? (
+                      <>
+                        <Badge variant={statusVariant[entry.from]} className="capitalize">
+                          {entry.from}
+                        </Badge>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                        <Badge variant={statusVariant[entry.to]} className="capitalize">
+                          {entry.to}
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs font-medium text-muted-foreground">Created as</span>
+                        <Badge variant={statusVariant[entry.to]} className="capitalize">
+                          {entry.to}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                  <p
+                    className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    <Clock className="h-3 w-3" />
+                    {format(new Date(entry.at), "dd MMM yyyy, HH:mm")}
+                    <span className="text-muted-foreground/70">
+                      ({formatDistanceToNow(new Date(entry.at), { addSuffix: true })})
+                    </span>
+                  </p>
+                </li>
+              );
+            })}
           </ol>
         </DialogContent>
       </Dialog>
