@@ -660,39 +660,61 @@ export default function PayrollAudit() {
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <ol className="relative space-y-4 border-l border-border pl-6">
-            {historyEntries.map((entry, i) => (
-              <li key={i} className="relative">
-                <span className="absolute -left-[1.55rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary" />
-                <div className="flex flex-wrap items-center gap-2">
-                  {entry.from ? (
-                    <>
-                      <Badge variant={statusVariant[entry.from]} className="capitalize">
-                        {entry.from}
-                      </Badge>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Badge variant={statusVariant[entry.to]} className="capitalize">
-                        {entry.to}
-                      </Badge>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xs font-medium text-muted-foreground">Created as</span>
-                      <Badge variant={statusVariant[entry.to]} className="capitalize">
-                        {entry.to}
-                      </Badge>
-                    </>
-                  )}
-                </div>
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {format(new Date(entry.at), "dd MMM yyyy, HH:mm")}
-                  <span className="text-muted-foreground/70">
-                    ({formatDistanceToNow(new Date(entry.at), { addSuffix: true })})
-                  </span>
-                </p>
-              </li>
-            ))}
+          <ol
+            className="relative space-y-4 border-l border-border pl-6"
+            aria-label={
+              historyRecord
+                ? `Status change history for ${historyRecord.name}`
+                : "Status change history"
+            }
+          >
+            {historyEntries.map((entry, i) => {
+              const when = `${format(new Date(entry.at), "dd MMM yyyy, HH:mm")} (${formatDistanceToNow(
+                new Date(entry.at),
+                { addSuffix: true },
+              )})`;
+              const itemLabel = entry.from
+                ? `Changed from ${entry.from} to ${entry.to} on ${when}`
+                : `Created as ${entry.to} on ${when}`;
+              return (
+                <li key={i} className="relative" aria-label={itemLabel}>
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-[1.55rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
+                  />
+                  <div className="flex flex-wrap items-center gap-2" aria-hidden="true">
+                    {entry.from ? (
+                      <>
+                        <Badge variant={statusVariant[entry.from]} className="capitalize">
+                          {entry.from}
+                        </Badge>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                        <Badge variant={statusVariant[entry.to]} className="capitalize">
+                          {entry.to}
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs font-medium text-muted-foreground">Created as</span>
+                        <Badge variant={statusVariant[entry.to]} className="capitalize">
+                          {entry.to}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                  <p
+                    className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    <Clock className="h-3 w-3" />
+                    {format(new Date(entry.at), "dd MMM yyyy, HH:mm")}
+                    <span className="text-muted-foreground/70">
+                      ({formatDistanceToNow(new Date(entry.at), { addSuffix: true })})
+                    </span>
+                  </p>
+                </li>
+              );
+            })}
           </ol>
         </DialogContent>
       </Dialog>
