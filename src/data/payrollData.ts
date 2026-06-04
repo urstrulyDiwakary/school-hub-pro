@@ -24,6 +24,36 @@ export interface PayrollRecord {
 
 export type PayrollMonth = "october" | "september" | "august";
 
+/** A single status transition in a record's timeline. */
+export interface StatusChange {
+  /** Previous status (null for the initial "created" event). */
+  from: PayrollStatus | null;
+  /** Status the record moved to. */
+  to: PayrollStatus;
+  /** ISO timestamp of when the change happened. */
+  at: string;
+}
+
+/**
+ * Build the full status change history for a record. Derived deterministically
+ * from the record's current status and `statusUpdatedAt`, so the on-screen
+ * timeline, the modal and the exports all show the same sequence. The final
+ * entry's timestamp always equals `statusUpdatedAt`.
+ */
+export function getStatusHistory(record: PayrollRecord): StatusChange[] {
+  const finalAt = new Date(record.statusUpdatedAt);
+  if (record.status === "pending") {
+    // Pending records have only ever been pending since creation.
+    return [{ from: null, to: "pending", at: finalAt.toISOString() }];
+  }
+  // Everything else was created as pending, then moved to its current status.
+  const created = new Date(finalAt.getTime() - 1000 * 60 * 60 * 24 * 2);
+  return [
+    { from: null, to: "pending", at: created.toISOString() },
+    { from: "pending", to: record.status, at: finalAt.toISOString() },
+  ];
+}
+
 export const MONTH_LABELS: Record<PayrollMonth, string> = {
   october: "October 2024",
   september: "September 2024",

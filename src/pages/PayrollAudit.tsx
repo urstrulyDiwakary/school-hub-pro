@@ -1,12 +1,33 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ArrowLeft, Download, FileText, ScrollText, Clock, ShieldCheck, UserCog, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  ScrollText,
+  Clock,
+  ShieldCheck,
+  UserCog,
+  X,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
+  History,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -34,9 +55,12 @@ import {
   formatINR,
   grossPay,
   netPay,
+  getStatusHistory,
   MONTH_LABELS,
   CURRENT_TEACHER_EMPLOYEE_ID,
   type PayrollMonth,
+  type PayrollRecord,
+  type PayrollStatus,
   type PayrollTypeFilter,
   type PayrollStatusFilter,
 } from "@/data/payrollData";
@@ -60,16 +84,71 @@ const STATUS_LABELS: Record<PayrollStatusFilter, string> = {
   hold: "Hold",
 };
 
+/** Canonical "Last Updated" format shared by the table, modal, CSV and PDF. */
+const LAST_UPDATED_FORMAT = "dd MMM, HH:mm";
+const formatLastUpdated = (iso: string) => format(new Date(iso), LAST_UPDATED_FORMAT);
+
+// Sorting -------------------------------------------------------------------
+type SortKey = "status" | "lastUpdated";
+type SortDir = "asc" | "desc";
+/** Status order used when sorting the Status Timeline column. */
+const STATUS_ORDER: Record<PayrollStatus, number> = { paid: 0, pending: 1, hold: 2 };
+
+// Filter persistence --------------------------------------------------------
+const FILTERS_STORAGE_KEY = "payroll-audit-filters";
+interface PersistedFilters {
+  selectedMonth: PayrollMonth;
+  filterType: PayrollTypeFilter;
+  statusFilter: PayrollStatusFilter;
+  sortKey: SortKey | null;
+  sortDir: SortDir;
+}
+const DEFAULT_FILTERS: PersistedFilters = {
+  selectedMonth: "october",
+  filterType: "all",
+  statusFilter: "all",
+  sortKey: null,
+  sortDir: "desc",
+};
+
+function loadFilters(): PersistedFilters {
+  if (typeof window === "undefined") return DEFAULT_FILTERS;
+  try {
+    const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    return { ...DEFAULT_FILTERS, ...(JSON.parse(raw) as Partial<PersistedFilters>) };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
 export default function PayrollAudit() {
   const { toast } = useToast();
-  const [selectedMonth, setSelectedMonth] = useState<PayrollMonth>("october");
-  const [filterType, setFilterType] = useState<PayrollTypeFilter>("all");
-  const [statusFilter, setStatusFilter] = useState<PayrollStatusFilter>("all");
+
+  const initial = useMemo(loadFilters, []);
+  const [selectedMonth, setSelectedMonth] = useState<PayrollMonth>(initial.selectedMonth);
+  const [filterType, setFilterType] = useState<PayrollTypeFilter>(initial.filterType);
+  const [statusFilter, setStatusFilter] = useState<PayrollStatusFilter>(initial.statusFilter);
+  const [sortKey, setSortKey] = useState<SortKey | null>(initial.sortKey);
+  const [sortDir, setSortDir] = useState<SortDir>(initial.sortDir);
+  const [historyRecord, setHistoryRecord] = useState<PayrollRecord | null>(null);
 
   // Role decides what slice of the data is even available. Admins see the full
   // school report; teachers can only ever see their own payroll records.
   const role = getCurrentRole();
   const isAdmin = role === "admin";
+
+  // Persist filter + sort selections so they survive a refresh.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FILTERS_STORAGE_KEY,
+        JSON.stringify({ selectedMonth, filterType, statusFilter, sortKey, sortDir }),
+      );
+    } catch {
+      /* ignore quota / unavailable storage */
+    }
+  }, [selectedMonth, filterType, statusFilter, sortKey, sortDir]);
 
   // Single timestamp captured when the report is computed/generated.
   const generatedAt = useMemo(
@@ -79,11 +158,45 @@ export default function PayrollAudit() {
 
   // 1) scope to role  2) month + type filter  3) net-pay status filter.
   const roleScoped = useMemo(() => scopeRecordsForRole(payrollData, role), [role]);
-  const records = filterByStatus(
+  const filteredRecords = filterByStatus(
     filterPayroll(roleScoped, isAdmin ? filterType : "all", selectedMonth),
     statusFilter,
   );
+
+  // Apply column sorting (Status Timeline / Last Updated).
+  const records = useMemo(() => {
+    if (!sortKey) return filteredRecords;
+    const sorted = [...filteredRecords].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "status") {
+        cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      } else {
+        cmp = new Date(a.statusUpdatedAt).getTime() - new Date(b.statusUpdatedAt).getTime();
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filteredRecords, sortKey, sortDir]);
+
   const summary = summarizePayroll(records);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) return <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="h-3.5 w-3.5" />
+    ) : (
+      <ArrowDown className="h-3.5 w-3.5" />
+    );
+  };
 
   // Active filter chips — only show filters that deviate from the default.
   interface FilterChip {
@@ -135,7 +248,7 @@ export default function PayrollAudit() {
       "Gross",
       "Deductions",
       "Net Pay",
-      "Status",
+      "Status Timeline",
       "Last Updated",
       "Generated At",
     ];
@@ -148,7 +261,7 @@ export default function PayrollAudit() {
       r.deductions,
       netPay(r),
       r.status,
-      format(new Date(r.statusUpdatedAt), "dd MMM yyyy, HH:mm"),
+      formatLastUpdated(r.statusUpdatedAt),
       generatedAt.toISOString(),
     ]);
     rows.push([
@@ -200,7 +313,7 @@ export default function PayrollAudit() {
 
     autoTable(doc, {
       startY: 70 + metaLines.length * 14 + 8,
-      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status", "Last Updated"]],
+      head: [["Employee", "ID", "Type", "Month", "Gross", "Deductions", "Net Pay", "Status Timeline", "Last Updated"]],
       body: records.map((r) => [
         r.name,
         r.employeeId,
@@ -210,7 +323,7 @@ export default function PayrollAudit() {
         `-${formatINR(r.deductions)}`,
         formatINR(netPay(r)),
         r.status,
-        format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm"),
+        formatLastUpdated(r.statusUpdatedAt),
       ]),
       foot: [
         [
@@ -237,6 +350,8 @@ export default function PayrollAudit() {
       description: `${records.length} records exported to PDF with computed totals.`,
     });
   };
+
+  const historyEntries = historyRecord ? getStatusHistory(historyRecord) : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -388,7 +503,28 @@ export default function PayrollAudit() {
               <TableHead className="text-right">Gross</TableHead>
               <TableHead className="text-right">Deductions</TableHead>
               <TableHead className="text-right">Net Pay</TableHead>
-              <TableHead>Status Timeline</TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("status")}
+                  className="-ml-1 flex items-center gap-1 rounded px-1 py-0.5 font-medium transition-colors hover:text-foreground"
+                  aria-label="Sort by status timeline"
+                >
+                  Status Timeline
+                  <SortIcon column="status" />
+                </button>
+              </TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("lastUpdated")}
+                  className="-ml-1 flex items-center gap-1 rounded px-1 py-0.5 font-medium transition-colors hover:text-foreground"
+                  aria-label="Sort by last updated"
+                >
+                  Last Updated
+                  <SortIcon column="lastUpdated" />
+                </button>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -404,24 +540,32 @@ export default function PayrollAudit() {
                 <TableCell className="text-right text-destructive">-{formatINR(r.deductions)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatINR(netPay(r))}</TableCell>
                 <TableCell>
-                  <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryRecord(r)}
+                    className="group flex items-center gap-1.5 rounded-md transition-opacity hover:opacity-80"
+                    aria-label={`View status history for ${r.name}`}
+                  >
                     <Badge variant={statusVariant[r.status]} className="w-fit capitalize">
                       {r.status}
                     </Badge>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(r.statusUpdatedAt), "dd MMM, HH:mm")}
-                      <span className="text-muted-foreground/70">
-                        ({formatDistanceToNow(new Date(r.statusUpdatedAt), { addSuffix: true })})
-                      </span>
+                    <History className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+                  </button>
+                </TableCell>
+                <TableCell>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {formatLastUpdated(r.statusUpdatedAt)}
+                    <span className="text-muted-foreground/70">
+                      ({formatDistanceToNow(new Date(r.statusUpdatedAt), { addSuffix: true })})
                     </span>
-                  </div>
+                  </span>
                 </TableCell>
               </TableRow>
             ))}
             {records.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                   No payroll records match the current filters.
                 </TableCell>
               </TableRow>
@@ -441,12 +585,63 @@ export default function PayrollAudit() {
                 <TableCell className="text-right font-bold text-primary">
                   {formatINR(summary.totalNet)}
                 </TableCell>
-                <TableCell />
+                <TableCell colSpan={2} />
               </TableRow>
             </TableFooter>
           )}
         </Table>
       </Card>
+
+      {/* Status history modal */}
+      <Dialog open={historyRecord !== null} onOpenChange={(open) => !open && setHistoryRecord(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Status Change History
+            </DialogTitle>
+            <DialogDescription>
+              {historyRecord
+                ? `${historyRecord.name} (${historyRecord.employeeId}) — ${MONTH_LABELS[historyRecord.month]}`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="relative space-y-4 border-l border-border pl-6">
+            {historyEntries.map((entry, i) => (
+              <li key={i} className="relative">
+                <span className="absolute -left-[1.55rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary" />
+                <div className="flex flex-wrap items-center gap-2">
+                  {entry.from ? (
+                    <>
+                      <Badge variant={statusVariant[entry.from]} className="capitalize">
+                        {entry.from}
+                      </Badge>
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Badge variant={statusVariant[entry.to]} className="capitalize">
+                        {entry.to}
+                      </Badge>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs font-medium text-muted-foreground">Created as</span>
+                      <Badge variant={statusVariant[entry.to]} className="capitalize">
+                        {entry.to}
+                      </Badge>
+                    </>
+                  )}
+                </div>
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {format(new Date(entry.at), "dd MMM yyyy, HH:mm")}
+                  <span className="text-muted-foreground/70">
+                    ({formatDistanceToNow(new Date(entry.at), { addSuffix: true })})
+                  </span>
+                </p>
+              </li>
+            ))}
+          </ol>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
