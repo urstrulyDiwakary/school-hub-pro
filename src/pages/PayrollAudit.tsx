@@ -104,6 +104,7 @@ interface PersistedFilters {
   statusFilter: PayrollStatusFilter;
   sortKey: SortKey | null;
   sortDir: SortDir;
+  search: string;
 }
 const DEFAULT_FILTERS: PersistedFilters = {
   selectedMonth: "october",
@@ -111,6 +112,7 @@ const DEFAULT_FILTERS: PersistedFilters = {
   statusFilter: "all",
   sortKey: null,
   sortDir: "desc",
+  search: "",
 };
 
 function loadFilters(): PersistedFilters {
@@ -134,24 +136,30 @@ export default function PayrollAudit() {
   const [sortKey, setSortKey] = useState<SortKey | null>(initial.sortKey);
   const [sortDir, setSortDir] = useState<SortDir>(initial.sortDir);
   const [historyRecord, setHistoryRecord] = useState<PayrollRecord | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initial.search);
+  // Debounced copy of the search term used for filtering, so typing stays smooth.
+  const [debouncedSearch, setDebouncedSearch] = useState(initial.search);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(id);
+  }, [search]);
 
   // Role decides what slice of the data is even available. Admins see the full
   // school report; teachers can only ever see their own payroll records.
   const role = getCurrentRole();
   const isAdmin = role === "admin";
 
-  // Persist filter + sort selections so they survive a refresh.
+  // Persist filter + sort + search selections so they survive a refresh.
   useEffect(() => {
     try {
       window.localStorage.setItem(
         FILTERS_STORAGE_KEY,
-        JSON.stringify({ selectedMonth, filterType, statusFilter, sortKey, sortDir }),
+        JSON.stringify({ selectedMonth, filterType, statusFilter, sortKey, sortDir, search: debouncedSearch }),
       );
     } catch {
       /* ignore quota / unavailable storage */
     }
-  }, [selectedMonth, filterType, statusFilter, sortKey, sortDir]);
+  }, [selectedMonth, filterType, statusFilter, sortKey, sortDir, debouncedSearch]);
 
   // Single timestamp captured when the report is computed/generated.
   const generatedAt = useMemo(
@@ -167,7 +175,8 @@ export default function PayrollAudit() {
   );
 
   // Free-text search across staff name, employee id, status and timestamp.
-  const query = search.trim().toLowerCase();
+  // Uses the debounced term so filtering keeps up smoothly while typing.
+  const query = debouncedSearch.trim().toLowerCase();
   const filteredRecords = query
     ? baseRecords.filter((r) => {
         const haystack = [
@@ -251,7 +260,8 @@ export default function PayrollAudit() {
   const filtersSummary =
     `Month: ${MONTH_LABELS[selectedMonth]}` +
     ` | Type: ${isAdmin ? TYPE_LABELS[filterType] : "My records"}` +
-    ` | Status: ${STATUS_LABELS[statusFilter]}`;
+    ` | Status: ${STATUS_LABELS[statusFilter]}` +
+    ` | Search: ${query ? `"${debouncedSearch.trim()}"` : "None"}`;
 
   const exportFilename = (ext: string) =>
     `payroll-audit-${selectedMonth}-${format(generatedAt, "yyyyMMdd-HHmmss")}.${ext}`;
@@ -260,6 +270,7 @@ export default function PayrollAudit() {
     const metaRows = [
       ["Payroll Audit Report"],
       [`Filters: ${filtersSummary}`],
+      [`Showing: ${records.length} of ${baseRecords.length} records`],
       [`Generated At: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`],
       [],
     ];
@@ -328,6 +339,8 @@ export default function PayrollAudit() {
       `Month: ${MONTH_LABELS[selectedMonth]}`,
       `Scope: ${isAdmin ? `${filterType === "all" ? "All staff" : filterType === "teaching" ? "Teaching" : "Non-Teaching"}` : "My records"}` +
         `  |  Status: ${statusFilter === "all" ? "All" : statusFilter}`,
+      `Search: ${query ? `"${debouncedSearch.trim()}"` : "None"}`,
+      `Showing ${records.length} of ${baseRecords.length} records`,
       `Generated at: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`,
       `Viewing as: ${isAdmin ? "School Admin" : "Teacher"}`,
     ];
@@ -545,6 +558,15 @@ export default function PayrollAudit() {
         </div>
       )}
 
+
+      {/* Live result count */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground" aria-live="polite">
+        <span>
+          Showing <span className="font-medium text-foreground">{records.length}</span> of{" "}
+          <span className="font-medium text-foreground">{baseRecords.length}</span> records
+          {query && <span> matching “{debouncedSearch.trim()}”</span>}
+        </span>
+      </div>
 
       {/* Audit table */}
       <Card className="stat-card overflow-hidden">
