@@ -260,7 +260,8 @@ export default function PayrollAudit() {
   const filtersSummary =
     `Month: ${MONTH_LABELS[selectedMonth]}` +
     ` | Type: ${isAdmin ? TYPE_LABELS[filterType] : "My records"}` +
-    ` | Status: ${STATUS_LABELS[statusFilter]}`;
+    ` | Status: ${STATUS_LABELS[statusFilter]}` +
+    ` | Search: ${query ? `"${debouncedSearch.trim()}"` : "None"}`;
 
   const exportFilename = (ext: string) =>
     `payroll-audit-${selectedMonth}-${format(generatedAt, "yyyyMMdd-HHmmss")}.${ext}`;
