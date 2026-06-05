@@ -270,6 +270,7 @@ export default function PayrollAudit() {
     const metaRows = [
       ["Payroll Audit Report"],
       [`Filters: ${filtersSummary}`],
+      [`Showing: ${records.length} of ${baseRecords.length} records`],
       [`Generated At: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`],
       [],
     ];
