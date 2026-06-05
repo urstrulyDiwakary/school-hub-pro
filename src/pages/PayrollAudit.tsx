@@ -149,17 +149,17 @@ export default function PayrollAudit() {
   const role = getCurrentRole();
   const isAdmin = role === "admin";
 
-  // Persist filter + sort selections so they survive a refresh.
+  // Persist filter + sort + search selections so they survive a refresh.
   useEffect(() => {
     try {
       window.localStorage.setItem(
         FILTERS_STORAGE_KEY,
-        JSON.stringify({ selectedMonth, filterType, statusFilter, sortKey, sortDir }),
+        JSON.stringify({ selectedMonth, filterType, statusFilter, sortKey, sortDir, search: debouncedSearch }),
       );
     } catch {
       /* ignore quota / unavailable storage */
     }
-  }, [selectedMonth, filterType, statusFilter, sortKey, sortDir]);
+  }, [selectedMonth, filterType, statusFilter, sortKey, sortDir, debouncedSearch]);
 
   // Single timestamp captured when the report is computed/generated.
   const generatedAt = useMemo(
