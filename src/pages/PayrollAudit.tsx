@@ -559,6 +559,15 @@ export default function PayrollAudit() {
       )}
 
 
+      {/* Live result count */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground" aria-live="polite">
+        <span>
+          Showing <span className="font-medium text-foreground">{records.length}</span> of{" "}
+          <span className="font-medium text-foreground">{baseRecords.length}</span> records
+          {query && <span> matching “{debouncedSearch.trim()}”</span>}
+        </span>
+      </div>
+
       {/* Audit table */}
       <Card className="stat-card overflow-hidden">
         <Table>
