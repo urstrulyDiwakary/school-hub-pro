@@ -104,6 +104,7 @@ interface PersistedFilters {
   statusFilter: PayrollStatusFilter;
   sortKey: SortKey | null;
   sortDir: SortDir;
+  search: string;
 }
 const DEFAULT_FILTERS: PersistedFilters = {
   selectedMonth: "october",
@@ -111,6 +112,7 @@ const DEFAULT_FILTERS: PersistedFilters = {
   statusFilter: "all",
   sortKey: null,
   sortDir: "desc",
+  search: "",
 };
 
 function loadFilters(): PersistedFilters {
