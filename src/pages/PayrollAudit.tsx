@@ -175,7 +175,8 @@ export default function PayrollAudit() {
   );
 
   // Free-text search across staff name, employee id, status and timestamp.
-  const query = search.trim().toLowerCase();
+  // Uses the debounced term so filtering keeps up smoothly while typing.
+  const query = debouncedSearch.trim().toLowerCase();
   const filteredRecords = query
     ? baseRecords.filter((r) => {
         const haystack = [
