@@ -338,6 +338,8 @@ export default function PayrollAudit() {
       `Month: ${MONTH_LABELS[selectedMonth]}`,
       `Scope: ${isAdmin ? `${filterType === "all" ? "All staff" : filterType === "teaching" ? "Teaching" : "Non-Teaching"}` : "My records"}` +
         `  |  Status: ${statusFilter === "all" ? "All" : statusFilter}`,
+      `Search: ${query ? `"${debouncedSearch.trim()}"` : "None"}`,
+      `Showing ${records.length} of ${baseRecords.length} records`,
       `Generated at: ${format(generatedAt, "dd MMM yyyy, HH:mm:ss")}`,
       `Viewing as: ${isAdmin ? "School Admin" : "Teacher"}`,
     ];
