@@ -136,7 +136,13 @@ export default function PayrollAudit() {
   const [sortKey, setSortKey] = useState<SortKey | null>(initial.sortKey);
   const [sortDir, setSortDir] = useState<SortDir>(initial.sortDir);
   const [historyRecord, setHistoryRecord] = useState<PayrollRecord | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initial.search);
+  // Debounced copy of the search term used for filtering, so typing stays smooth.
+  const [debouncedSearch, setDebouncedSearch] = useState(initial.search);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(id);
+  }, [search]);
 
   // Role decides what slice of the data is even available. Admins see the full
   // school report; teachers can only ever see their own payroll records.
