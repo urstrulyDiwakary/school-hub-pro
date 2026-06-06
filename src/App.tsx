@@ -57,7 +57,7 @@ import StudentResults from "./pages/student/StudentResults";
 import StudentFees from "./pages/student/StudentFees";
 import StudentNotifications from "./pages/student/StudentNotifications";
 import StudentCalendar from "./pages/student/StudentCalendar";
-import StudentProfile from "./pages/student/StudentProfile";
+import StudentPortalProfile from "./pages/student/StudentProfile";
 import ExportJobsPanel from "./components/exports/ExportJobsPanel";
 import { exportJobQueue } from "./lib/exportJobQueue";
 
