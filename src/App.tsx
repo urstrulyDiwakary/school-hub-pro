@@ -80,67 +80,94 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          
-          {/* Protected routes with dashboard layout */}
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* Students */}
-            <Route path="/students" element={<Students />} />
-            <Route path="/students/add" element={<AddStudent />} />
-            <Route path="/students/:id" element={<StudentProfile />} />
-            <Route path="/students/attendance" element={<Attendance />} />
-            
-            {/* Teachers */}
-            <Route path="/teachers" element={<Teachers />} />
-            <Route path="/teachers/add" element={<AddTeacher />} />
-            
-            {/* Non-Teaching Staff */}
-            <Route path="/staff" element={<Staff />} />
-            <Route path="/staff/add" element={<AddStaff />} />
-            
-            {/* Fees */}
-            <Route path="/fees" element={<Fees />} />
-            <Route path="/fees/structure" element={<FeeStructure />} />
-            <Route path="/fees/pending" element={<Fees />} />
-            
-            {/* Payroll */}
-            <Route path="/payroll" element={<Payroll />} />
-            <Route path="/payroll/process" element={<Payroll />} />
-            <Route path="/payroll/audit" element={<PayrollAudit />} />
-            
-            {/* Academics */}
-            <Route path="/academics/classes" element={<Classes />} />
-            <Route path="/academics/subjects" element={<Subjects />} />
-            <Route path="/academics/timetable" element={<Timetable />} />
-            
-            {/* Attendance */}
-            <Route path="/attendance" element={<Attendance />} />
-            
-            {/* Communication */}
-            <Route path="/communication" element={<Communication />} />
-            
-            {/* Reports */}
-            <Route path="/reports" element={<Reports />} />
-            
-            {/* Settings */}
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/export-permissions" element={<ExportPermissions />} />
-            <Route path="/settings/export-config" element={<ExportConfig />} />
-            <Route path="/settings/export-templates" element={<ExportTemplates />} />
-            <Route path="/settings/export-audit" element={<ExportAuditLog />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
-            {/* Teacher Panel */}
-            <Route path="/teacher" element={<TeacherDashboard />} />
-            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-            <Route path="/teacher/homework" element={<TeacherHomework />} />
-            <Route path="/teacher/marks" element={<TeacherMarks />} />
-            <Route path="/teacher/remarks" element={<TeacherRemarks />} />
-            <Route path="/teacher/attendance" element={<TeacherAttendance />} />
-            <Route path="/teacher/attendance/history" element={<TeacherAttendanceHistory />} />
-            <Route path="/teacher/payslip" element={<TeacherPayslip />} />
+          {/* Protected routes — guarded by role-based permission matrix */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Students */}
+              <Route path="/students" element={<Students />} />
+              <Route path="/students/add" element={<AddStudent />} />
+              <Route path="/students/:id" element={<StudentProfile />} />
+              <Route path="/students/attendance" element={<Attendance />} />
+
+              {/* Teachers */}
+              <Route path="/teachers" element={<Teachers />} />
+              <Route path="/teachers/add" element={<AddTeacher />} />
+
+              {/* Non-Teaching Staff */}
+              <Route path="/staff" element={<Staff />} />
+              <Route path="/staff/add" element={<AddStaff />} />
+
+              {/* Fees */}
+              <Route path="/fees" element={<Fees />} />
+              <Route path="/fees/structure" element={<FeeStructure />} />
+              <Route path="/fees/pending" element={<Fees />} />
+
+              {/* Payroll */}
+              <Route path="/payroll" element={<Payroll />} />
+              <Route path="/payroll/process" element={<Payroll />} />
+              <Route path="/payroll/audit" element={<PayrollAudit />} />
+
+              {/* Academics */}
+              <Route path="/academics/classes" element={<Classes />} />
+              <Route path="/academics/subjects" element={<Subjects />} />
+              <Route path="/academics/timetable" element={<Timetable />} />
+
+              {/* Attendance */}
+              <Route path="/attendance" element={<Attendance />} />
+
+              {/* Communication */}
+              <Route path="/communication" element={<Communication />} />
+
+              {/* Reports */}
+              <Route path="/reports" element={<Reports />} />
+
+              {/* Settings */}
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/export-permissions" element={<ExportPermissions />} />
+              <Route path="/settings/export-config" element={<ExportConfig />} />
+              <Route path="/settings/export-templates" element={<ExportTemplates />} />
+              <Route path="/settings/export-audit" element={<ExportAuditLog />} />
+
+              {/* Teacher Panel */}
+              <Route path="/teacher" element={<TeacherDashboard />} />
+              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+              <Route path="/teacher/homework" element={<TeacherHomework />} />
+              <Route path="/teacher/marks" element={<TeacherMarks />} />
+              <Route path="/teacher/remarks" element={<TeacherRemarks />} />
+              <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+              <Route path="/teacher/attendance/history" element={<TeacherAttendanceHistory />} />
+              <Route path="/teacher/payslip" element={<TeacherPayslip />} />
+
+              {/* Parent Portal */}
+              <Route path="/parent" element={<Navigate to="/parent/dashboard" replace />} />
+              <Route path="/parent/dashboard" element={<ParentDashboard />} />
+              <Route path="/parent/child" element={<ChildProfile />} />
+              <Route path="/parent/attendance" element={<ParentAttendance />} />
+              <Route path="/parent/fees" element={<ParentFees />} />
+              <Route path="/parent/homework" element={<ParentHomework />} />
+              <Route path="/parent/results" element={<ParentResults />} />
+              <Route path="/parent/communication" element={<ParentCommunication />} />
+              <Route path="/parent/leave" element={<ParentLeave />} />
+
+              {/* Student Portal */}
+              <Route path="/student" element={<Navigate to="/student/dashboard" replace />} />
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
+              <Route path="/student/attendance" element={<StudentAttendance />} />
+              <Route path="/student/timetable" element={<StudentTimetable />} />
+              <Route path="/student/homework" element={<StudentHomework />} />
+              <Route path="/student/assignments" element={<StudentAssignments />} />
+              <Route path="/student/results" element={<StudentResults />} />
+              <Route path="/student/fees" element={<StudentFees />} />
+              <Route path="/student/notifications" element={<StudentNotifications />} />
+              <Route path="/student/calendar" element={<StudentCalendar />} />
+              <Route path="/student/profile" element={<StudentPortalProfile />} />
+            </Route>
           </Route>
-          
+
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
