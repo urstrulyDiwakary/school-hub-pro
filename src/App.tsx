@@ -36,6 +36,28 @@ import ExportConfig from "./pages/ExportConfig";
 import ExportAuditLog from "./pages/ExportAuditLog";
 import ExportTemplates from "./pages/ExportTemplates";
 import NotFound from "./pages/NotFound";
+import Unauthorized from "./pages/Unauthorized";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+// Parent Portal
+import ParentDashboard from "./pages/parent/ParentDashboard";
+import ChildProfile from "./pages/parent/ChildProfile";
+import ParentAttendance from "./pages/parent/ParentAttendance";
+import ParentFees from "./pages/parent/ParentFees";
+import ParentHomework from "./pages/parent/ParentHomework";
+import ParentResults from "./pages/parent/ParentResults";
+import ParentCommunication from "./pages/parent/ParentCommunication";
+import ParentLeave from "./pages/parent/ParentLeave";
+// Student Portal
+import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentAttendance from "./pages/student/StudentAttendance";
+import StudentTimetable from "./pages/student/StudentTimetable";
+import StudentHomework from "./pages/student/StudentHomework";
+import StudentAssignments from "./pages/student/StudentAssignments";
+import StudentResults from "./pages/student/StudentResults";
+import StudentFees from "./pages/student/StudentFees";
+import StudentNotifications from "./pages/student/StudentNotifications";
+import StudentCalendar from "./pages/student/StudentCalendar";
+import StudentProfile from "./pages/student/StudentProfile";
 import ExportJobsPanel from "./components/exports/ExportJobsPanel";
 import { exportJobQueue } from "./lib/exportJobQueue";
 
