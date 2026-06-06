@@ -1,44 +1,61 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Eye, EyeOff, Building2 } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, Building2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/lib/auth";
+import { ROLE_HOME, ROLE_LABELS, type Role } from "@/lib/auth/types";
+import { demoCredentialsByRole } from "@/lib/auth/mockUsers";
+
+const QUICK_ROLES: Role[] = [
+  "super_admin",
+  "school_admin",
+  "teacher",
+  "parent",
+  "student",
+  "accountant",
+];
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const login = useAuthStore((s) => s.login);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    schoolCode: "",
-    username: "",
+    schoolCode: "DEMO001",
+    email: "",
     password: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const completeLogin = async (email: string, password: string) => {
     setIsLoading(true);
-
-    // Simulate login - replace with actual authentication
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (formData.username && formData.password) {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      navigate("/dashboard");
+    await new Promise((r) => setTimeout(r, 500));
+    const user = login(email, password);
+    if (user) {
+      toast({ title: "Welcome back!", description: `Signed in as ${ROLE_LABELS[user.role]}.` });
+      navigate(ROLE_HOME[user.role], { replace: true });
     } else {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: "Invalid email or password. Try a demo account below.",
         variant: "destructive",
       });
     }
-
     setIsLoading(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    completeLogin(formData.email, formData.password);
+  };
+
+  const quickLogin = (role: Role) => {
+    const { email, password } = demoCredentialsByRole[role];
+    setFormData((f) => ({ ...f, email, password }));
+    completeLogin(email, password);
   };
 
   return (
@@ -49,9 +66,7 @@ export default function Login() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-sidebar-primary">
-            EduTrack Pro
-          </span>
+          <span className="text-xl font-bold text-sidebar-primary">EduTrack Pro</span>
         </div>
 
         <div className="space-y-4 xl:space-y-6">
@@ -61,12 +76,10 @@ export default function Login() {
             Management System
           </h1>
           <p className="max-w-lg text-base xl:text-lg text-sidebar-foreground">
-            Digitize your entire school operations with our comprehensive
-            management solution. From admissions to academics, fees to
-            communication.
+            One platform for admins, teachers, accountants, parents and students — admissions to
+            academics, fees to communication.
           </p>
 
-          {/* Feature highlights */}
           <div className="grid gap-3 xl:gap-4 pt-4 xl:pt-8 grid-cols-2">
             {[
               { label: "Student Management", value: "5000+" },
@@ -78,44 +91,34 @@ export default function Login() {
                 key={stat.label}
                 className="rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-3 xl:p-4"
               >
-                <p className="text-xl xl:text-2xl font-bold text-sidebar-primary">
-                  {stat.value}
-                </p>
+                <p className="text-xl xl:text-2xl font-bold text-sidebar-primary">{stat.value}</p>
                 <p className="text-xs xl:text-sm text-sidebar-muted">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-sm text-sidebar-muted">
-          © 2024 EduTrack Pro. All rights reserved.
-        </p>
+        <p className="text-sm text-sidebar-muted">© 2024 EduTrack Pro. All rights reserved.</p>
       </div>
 
       {/* Right side - Login form */}
       <div className="flex w-full items-center justify-center bg-background px-4 py-8 sm:px-6 lg:w-1/2 xl:w-[45%]">
-        <div className="w-full max-w-md space-y-6 sm:space-y-8">
-          {/* Mobile logo */}
+        <div className="w-full max-w-md space-y-6">
           <div className="flex items-center justify-center gap-3 lg:hidden">
-            <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary">
+              <GraduationCap className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl sm:text-2xl font-bold text-foreground">
-              EduTrack Pro
-            </span>
+            <span className="text-xl font-bold text-foreground">EduTrack Pro</span>
           </div>
 
-          <div className="space-y-1 sm:space-y-2 text-center lg:text-left">
+          <div className="space-y-1 text-center lg:text-left">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Welcome back
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to your account to continue
-            </p>
+            <p className="text-sm text-muted-foreground">Sign in to your account to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-            {/* School Code */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="schoolCode">School Code</Label>
               <div className="relative">
@@ -126,35 +129,30 @@ export default function Login() {
                   placeholder="Enter school code"
                   className="pl-10"
                   value={formData.schoolCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, schoolCode: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, schoolCode: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Username */}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Enter username"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-              />
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@edutrack.in"
+                  className="pl-10"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a
-                  href="#"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
+                <a href="#" className="text-sm font-medium text-primary hover:underline">
                   Forgot password?
                 </a>
               </div>
@@ -164,31 +162,20 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
                 <button
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit button */}
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
@@ -200,21 +187,23 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* Demo credentials */}
+          {/* Quick demo role login */}
           <div className="rounded-lg border bg-muted/50 p-4">
-            <p className="mb-2 text-sm font-medium text-foreground">
-              Demo Credentials
-            </p>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>
-                <span className="font-medium">School Code:</span> DEMO001
-              </p>
-              <p>
-                <span className="font-medium">Username:</span> admin
-              </p>
-              <p>
-                <span className="font-medium">Password:</span> admin123
-              </p>
+            <p className="mb-3 text-sm font-medium text-foreground">Quick demo login</p>
+            <div className="grid grid-cols-2 gap-2">
+              {QUICK_ROLES.map((role) => (
+                <Button
+                  key={role}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoading}
+                  onClick={() => quickLogin(role)}
+                  className="justify-start"
+                >
+                  {ROLE_LABELS[role]}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
