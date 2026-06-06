@@ -149,24 +149,56 @@ export const navByPortal: Record<Portal, NavItem[]> = {
   ],
 };
 
+// Explicit, flat mobile nav lists per portal (icons + short labels).
+const mobileNav: Record<Portal, NavItem[]> = {
+  admin: [
+    { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { title: "Students", icon: Users, href: "/students" },
+    { title: "Teachers", icon: GraduationCap, href: "/teachers" },
+    { title: "Fees", icon: CreditCard, href: "/fees" },
+    { title: "Reports", icon: BarChart3, href: "/reports" },
+    { title: "Attendance", icon: CalendarCheck, href: "/attendance" },
+    { title: "Classes", icon: BookOpen, href: "/academics/classes" },
+    { title: "Payroll", icon: Wallet, href: "/payroll" },
+    { title: "Communication", icon: MessageSquare, href: "/communication" },
+    { title: "Settings", icon: Settings, href: "/settings" },
+  ],
+  teacher: [
+    { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
+    { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
+    { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
+    { title: "Marks", icon: ClipboardCheck, href: "/teacher/marks" },
+    { title: "Remarks", icon: MessageSquare, href: "/teacher/remarks" },
+    { title: "History", icon: Clock, href: "/teacher/attendance/history" },
+    { title: "Payslip", icon: Wallet, href: "/teacher/payslip" },
+    { title: "Settings", icon: Settings, href: "/settings" },
+  ],
+  parent: [
+    { title: "Dashboard", icon: LayoutDashboard, href: "/parent/dashboard" },
+    { title: "Attendance", icon: CalendarCheck, href: "/parent/attendance" },
+    { title: "Fees", icon: CreditCard, href: "/parent/fees" },
+    { title: "Results", icon: Trophy, href: "/parent/results" },
+    { title: "Child", icon: User, href: "/parent/child" },
+    { title: "Homework", icon: BookOpen, href: "/parent/homework" },
+    { title: "Messages", icon: MessageSquare, href: "/parent/communication" },
+    { title: "Leave", icon: PlaneTakeoff, href: "/parent/leave" },
+  ],
+  student: [
+    { title: "Dashboard", icon: LayoutDashboard, href: "/student/dashboard" },
+    { title: "Timetable", icon: Clock, href: "/student/timetable" },
+    { title: "Homework", icon: BookOpen, href: "/student/homework" },
+    { title: "Results", icon: Trophy, href: "/student/results" },
+    { title: "Attendance", icon: CalendarCheck, href: "/student/attendance" },
+    { title: "Assignments", icon: CheckSquare, href: "/student/assignments" },
+    { title: "Fees", icon: Receipt, href: "/student/fees" },
+    { title: "Calendar", icon: CalendarDays, href: "/student/calendar" },
+    { title: "Profile", icon: User, href: "/student/profile" },
+  ],
+};
+
 /** Bottom-nav primary tabs (first 4) per portal; the rest go in "More". */
 export function getMobileNav(portal: Portal): { primary: NavItem[]; more: NavItem[] } {
-  // Flatten admin children to top-level for mobile.
-  const flat: NavItem[] =
-    portal === "admin"
-      ? [
-          { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-          { title: "Students", icon: Users, href: "/students" },
-          { title: "Teachers", icon: GraduationCap, href: "/teachers" },
-          { title: "Fees", icon: CreditCard, href: "/fees" },
-          { title: "Reports", icon: BarChart3, href: "/reports" },
-          { title: "Attendance", icon: CalendarCheck, href: "/attendance" },
-          { title: "Classes", icon: BookOpen, href: "/academics/classes" },
-          { title: "Payroll", icon: Wallet, href: "/payroll" },
-          { title: "Communication", icon: MessageSquare, href: "/communication" },
-          { title: "Settings", icon: Settings, href: "/settings" },
-        ]
-      : navByPortal[portal].filter((i) => i.href);
+  const flat = mobileNav[portal];
   return { primary: flat.slice(0, 4), more: flat.slice(4) };
 }
 
