@@ -60,6 +60,19 @@ import StudentCalendar from "./pages/student/StudentCalendar";
 import StudentPortalProfile from "./pages/student/StudentProfile";
 import ExportJobsPanel from "./components/exports/ExportJobsPanel";
 import { exportJobQueue } from "./lib/exportJobQueue";
+// Examination & Assessment module
+import ExamDashboard from "./pages/exam/ExamDashboard";
+import ExamConfiguration from "./pages/exam/ExamConfiguration";
+import ExamTimetable from "./pages/exam/ExamTimetable";
+import MarksEntry from "./pages/exam/MarksEntry";
+import GradeSystem from "./pages/exam/GradeSystem";
+import ReportCards from "./pages/exam/ReportCards";
+import ResultPublishing from "./pages/exam/ResultPublishing";
+import ExamAnalytics from "./pages/exam/ExamAnalytics";
+import QuestionBank from "./pages/exam/QuestionBank";
+import HallTickets from "./pages/exam/HallTickets";
+import EvaluationCenter from "./pages/exam/EvaluationCenter";
+import ExamReports from "./pages/exam/ExamReports";
 
 // Restore any persisted failed-job history once at module load so the panel
 // shows previous failures (with timestamps + error reasons) after a reload.
@@ -110,6 +123,21 @@ const App = () => (
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/payroll/process" element={<Payroll />} />
               <Route path="/payroll/audit" element={<PayrollAudit />} />
+
+              {/* Examination & Assessment */}
+              <Route path="/exams" element={<ExamDashboard />} />
+              <Route path="/exams/dashboard" element={<ExamDashboard />} />
+              <Route path="/exams/configuration" element={<ExamConfiguration />} />
+              <Route path="/exams/timetable" element={<ExamTimetable />} />
+              <Route path="/exams/marks" element={<MarksEntry />} />
+              <Route path="/exams/grades" element={<GradeSystem />} />
+              <Route path="/exams/report-cards" element={<ReportCards />} />
+              <Route path="/exams/publishing" element={<ResultPublishing />} />
+              <Route path="/exams/analytics" element={<ExamAnalytics />} />
+              <Route path="/exams/question-bank" element={<QuestionBank />} />
+              <Route path="/exams/hall-tickets" element={<HallTickets />} />
+              <Route path="/exams/evaluation" element={<EvaluationCenter />} />
+              <Route path="/exams/reports" element={<ExamReports />} />
 
               {/* Academics */}
               <Route path="/academics/classes" element={<Classes />} />
