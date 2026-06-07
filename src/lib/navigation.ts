@@ -177,6 +177,7 @@ const mobileNav: Record<Portal, NavItem[]> = {
     { title: "Reports", icon: BarChart3, href: "/reports" },
     { title: "Attendance", icon: CalendarCheck, href: "/attendance" },
     { title: "Classes", icon: BookOpen, href: "/academics/classes" },
+    { title: "Exams", icon: ClipboardCheck, href: "/exams/dashboard" },
     { title: "Payroll", icon: Wallet, href: "/payroll" },
     { title: "Communication", icon: MessageSquare, href: "/communication" },
     { title: "Settings", icon: Settings, href: "/settings" },
