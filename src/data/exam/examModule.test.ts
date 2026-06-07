@@ -38,7 +38,7 @@ describe("gradeService - grade calculation", () => {
 });
 
 describe("resultService - result generation & analytics", () => {
-  const results = getResultsByExam("EXM001");
+  const results = resultService.getByExamClass("EXM001", "Class 10");
 
   it("generates consistent ranks and percentages", () => {
     const ranks = results.map((r) => r.rank);
