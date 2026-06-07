@@ -124,6 +124,21 @@ const App = () => (
               <Route path="/payroll/process" element={<Payroll />} />
               <Route path="/payroll/audit" element={<PayrollAudit />} />
 
+              {/* Examination & Assessment */}
+              <Route path="/exams" element={<ExamDashboard />} />
+              <Route path="/exams/dashboard" element={<ExamDashboard />} />
+              <Route path="/exams/configuration" element={<ExamConfiguration />} />
+              <Route path="/exams/timetable" element={<ExamTimetable />} />
+              <Route path="/exams/marks" element={<MarksEntry />} />
+              <Route path="/exams/grades" element={<GradeSystem />} />
+              <Route path="/exams/report-cards" element={<ReportCards />} />
+              <Route path="/exams/publishing" element={<ResultPublishing />} />
+              <Route path="/exams/analytics" element={<ExamAnalytics />} />
+              <Route path="/exams/question-bank" element={<QuestionBank />} />
+              <Route path="/exams/hall-tickets" element={<HallTickets />} />
+              <Route path="/exams/evaluation" element={<EvaluationCenter />} />
+              <Route path="/exams/reports" element={<ExamReports />} />
+
               {/* Academics */}
               <Route path="/academics/classes" element={<Classes />} />
               <Route path="/academics/subjects" element={<Subjects />} />
