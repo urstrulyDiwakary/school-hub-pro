@@ -60,6 +60,19 @@ import StudentCalendar from "./pages/student/StudentCalendar";
 import StudentPortalProfile from "./pages/student/StudentProfile";
 import ExportJobsPanel from "./components/exports/ExportJobsPanel";
 import { exportJobQueue } from "./lib/exportJobQueue";
+// Examination & Assessment module
+import ExamDashboard from "./pages/exam/ExamDashboard";
+import ExamConfiguration from "./pages/exam/ExamConfiguration";
+import ExamTimetable from "./pages/exam/ExamTimetable";
+import MarksEntry from "./pages/exam/MarksEntry";
+import GradeSystem from "./pages/exam/GradeSystem";
+import ReportCards from "./pages/exam/ReportCards";
+import ResultPublishing from "./pages/exam/ResultPublishing";
+import ExamAnalytics from "./pages/exam/ExamAnalytics";
+import QuestionBank from "./pages/exam/QuestionBank";
+import HallTickets from "./pages/exam/HallTickets";
+import EvaluationCenter from "./pages/exam/EvaluationCenter";
+import ExamReports from "./pages/exam/ExamReports";
 
 // Restore any persisted failed-job history once at module load so the panel
 // shows previous failures (with timestamps + error reasons) after a reload.
