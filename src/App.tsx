@@ -82,14 +82,19 @@ if (typeof window !== "undefined") {
 
 const queryClient = new QueryClient();
 
+import { ThemeProvider } from "./components/theme/ThemeProvider";
+import { CommandPalette } from "./components/shell/CommandPalette";
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ExportJobsPanel />
-        <Routes>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ExportJobsPanel />
+          <CommandPalette />
+          <Routes>
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
