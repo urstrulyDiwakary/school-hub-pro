@@ -8,135 +8,132 @@
 
 @layer base {
   :root {
-    /* Core backgrounds */
-    --background: 220 20% 98%;
+    /* Surfaces — layered neutrals for calm, enterprise feel */
+    --background: 220 24% 97%;
     --foreground: 222 47% 11%;
+    --surface: 220 20% 99%;
+    --surface-muted: 220 18% 95%;
 
-    /* Card surfaces */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    /* Popover surfaces */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary - Deep Indigo */
-    --primary: 234 89% 54%;
+    /* Brand — refined indigo (less saturated, more premium) */
+    --primary: 234 78% 56%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 234 89% 48%;
+    --primary-hover: 234 78% 50%;
+    --primary-soft: 234 78% 96%;
 
-    /* Secondary - Slate */
-    --secondary: 215 20% 95%;
+    --secondary: 220 16% 94%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted surfaces */
     --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted-foreground: 220 9% 42%;
 
-    /* Accent */
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 234 78% 96%;
+    --accent-foreground: 234 78% 32%;
 
-    /* Status colors */
-    --destructive: 0 84% 60%;
+    /* Semantic status */
+    --destructive: 0 74% 55%;
     --destructive-foreground: 0 0% 100%;
-    
-    --success: 160 84% 39%;
+    --success: 158 74% 38%;
     --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
+    --warning: 32 96% 48%;
     --warning-foreground: 0 0% 100%;
-    
-    --info: 199 89% 48%;
+    --info: 202 89% 46%;
     --info-foreground: 0 0% 100%;
 
-    /* Borders & inputs */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 234 89% 54%;
+    --border: 220 14% 89%;
+    --input: 220 14% 89%;
+    --ring: 234 78% 56%;
 
     --radius: 0.625rem;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 215 20% 75%;
+    /* Sidebar — deep, tinted navy (not pure black) */
+    --sidebar-background: 224 44% 9%;
+    --sidebar-foreground: 215 24% 82%;
     --sidebar-primary: 0 0% 100%;
     --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 222 47% 16%;
+    --sidebar-accent: 224 40% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 234 89% 54%;
-    --sidebar-muted: 220 9% 46%;
+    --sidebar-border: 224 40% 16%;
+    --sidebar-ring: 234 78% 56%;
+    --sidebar-muted: 220 10% 58%;
 
-    /* Chart colors */
-    --chart-1: 234 89% 54%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 199 89% 48%;
+    /* Charts */
+    --chart-1: 234 78% 56%;
+    --chart-2: 158 74% 40%;
+    --chart-3: 32 96% 52%;
+    --chart-4: 202 89% 50%;
     --chart-5: 280 68% 60%;
-    --chart-6: 340 82% 52%;
+    --chart-6: 340 82% 56%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(234 89% 54%) 0%, hsl(234 89% 44%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 84% 32%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(234 78% 56%) 0%, hsl(248 78% 60%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(158 74% 40%) 0%, hsl(170 74% 36%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 24% 99%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(220 24% 99%) 0%, hsl(220 20% 96%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(220 20% 10% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.1), 0 2px 4px -2px hsl(220 20% 10% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(220 20% 10% / 0.1), 0 4px 6px -4px hsl(220 20% 10% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(220 20% 10% / 0.08), 0 1px 2px -1px hsl(220 20% 10% / 0.08);
-    --shadow-card-hover: 0 10px 25px -5px hsl(220 20% 10% / 0.1), 0 8px 10px -6px hsl(220 20% 10% / 0.1);
+    /* Elevation — layered, soft */
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(222 47% 11% / 0.06), 0 2px 4px -2px hsl(222 47% 11% / 0.04);
+    --shadow-lg: 0 12px 28px -8px hsl(222 47% 11% / 0.12), 0 4px 10px -6px hsl(222 47% 11% / 0.08);
+    --shadow-card: 0 1px 2px 0 hsl(222 47% 11% / 0.04), 0 1px 3px 0 hsl(222 47% 11% / 0.05);
+    --shadow-card-hover: 0 12px 24px -8px hsl(222 47% 11% / 0.12), 0 6px 12px -6px hsl(222 47% 11% / 0.08);
+    --shadow-focus: 0 0 0 3px hsl(234 78% 56% / 0.18);
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Premium dark — deep charcoal blue, not pure inverse */
+    --background: 224 40% 7%;
+    --foreground: 210 32% 96%;
+    --surface: 224 36% 10%;
+    --surface-muted: 224 32% 13%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 36% 10%;
+    --card-foreground: 210 32% 96%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 224 36% 11%;
+    --popover-foreground: 210 32% 96%;
 
-    --primary: 234 89% 64%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 234 89% 58%;
+    --primary: 234 88% 68%;
+    --primary-foreground: 224 40% 8%;
+    --primary-hover: 234 88% 62%;
+    --primary-soft: 234 40% 18%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 224 28% 16%;
+    --secondary-foreground: 210 32% 96%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 224 24% 15%;
+    --muted-foreground: 215 18% 66%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 234 32% 20%;
+    --accent-foreground: 234 88% 82%;
 
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 210 40% 98%;
-    
-    --success: 160 84% 45%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 55%;
-    --warning-foreground: 0 0% 10%;
-    
-    --info: 199 89% 55%;
-    --info-foreground: 0 0% 100%;
+    --destructive: 0 68% 55%;
+    --destructive-foreground: 210 32% 98%;
+    --success: 158 68% 48%;
+    --success-foreground: 224 40% 8%;
+    --warning: 32 96% 58%;
+    --warning-foreground: 224 40% 8%;
+    --info: 202 89% 60%;
+    --info-foreground: 224 40% 8%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 234 89% 64%;
+    --border: 224 28% 18%;
+    --input: 224 28% 18%;
+    --ring: 234 88% 68%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 234 89% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 47% 15%;
-    --sidebar-ring: 234 89% 64%;
-    --sidebar-muted: 220 9% 50%;
+    --sidebar-background: 224 44% 5%;
+    --sidebar-foreground: 215 20% 78%;
+    --sidebar-primary: 210 32% 98%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 224 36% 11%;
+    --sidebar-accent-foreground: 210 32% 98%;
+    --sidebar-border: 224 36% 14%;
+    --sidebar-ring: 234 88% 68%;
+    --sidebar-muted: 220 10% 56%;
   }
 }
 
@@ -148,11 +145,31 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight text-foreground;
   }
+
+  /* Consistent focus ring across the app */
+  :where(button, a, input, select, textarea, [role="button"]):focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+  }
+}
+
+/* Enterprise typography scale */
+@layer components {
+  .text-h-page { @apply text-[22px] sm:text-2xl font-semibold tracking-tight text-foreground; }
+  .text-h-section { @apply text-lg font-semibold tracking-tight text-foreground; }
+  .text-h-card { @apply text-sm font-semibold text-foreground; }
+  .text-body { @apply text-sm text-foreground; }
+  .text-caption { @apply text-xs text-muted-foreground; }
+  .text-status { @apply text-[11px] font-medium uppercase tracking-wider; }
 }
 
 @layer components {
