@@ -1,80 +1,59 @@
+import { lazy } from "react";
 import {
-  Users,
+  Calendar,
+  CreditCard,
   GraduationCap,
   UserCheck,
+  Users,
   Wallet,
-  CreditCard,
+  UserPlus,
+  ClipboardCheck,
+  FileText,
+  Megaphone,
+  BookOpen,
+  Receipt,
+  AlertTriangle,
   TrendingUp,
-  TrendingDown,
-  Calendar,
-  Clock,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+  ActivityFeed,
+  AlertCard,
+  ApprovalQueue,
+  CalendarWidget,
+  ChartCard,
+  DashboardGrid,
+  DashboardShell,
+  InsightCard,
+  KPIGrid,
+  NotificationPanel,
+  QuickActionsPanel,
+  TaskQueue,
+  TrendCard,
+  type ActivityItem,
+  type ApprovalItem,
+  type CalendarEvent,
+  type DashboardAction,
+  type DashboardAlert,
+  type NotificationItem,
+  type TaskItem,
+} from "@/components/dashboard";
+import { PageHeader } from "@/components/shell/PageHeader";
 
-const statsCards = [
-  {
-    title: "Total Students",
-    value: "2,847",
-    change: "+12%",
-    trend: "up",
-    icon: GraduationCap,
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Teaching Staff",
-    value: "156",
-    change: "+3%",
-    trend: "up",
-    icon: Users,
-    color: "bg-success/10 text-success",
-  },
-  {
-    title: "Non-Teaching Staff",
-    value: "89",
-    change: "0%",
-    trend: "neutral",
-    icon: UserCheck,
-    color: "bg-info/10 text-info",
-  },
-  {
-    title: "Today's Attendance",
-    value: "94.2%",
-    change: "-0.8%",
-    trend: "down",
-    icon: Calendar,
-    color: "bg-warning/10 text-warning",
-  },
-  {
-    title: "Fee Collection (Month)",
-    value: "₹18.5L",
-    change: "+8%",
-    trend: "up",
-    icon: CreditCard,
-    color: "bg-success/10 text-success",
-  },
-  {
-    title: "Salary Expense (Month)",
-    value: "₹12.3L",
-    change: "+2%",
-    trend: "up",
-    icon: Wallet,
-    color: "bg-destructive/10 text-destructive",
-  },
-];
+// Charts lazy-loaded so recharts is code-split out of the initial dashboard bundle.
+const FeeCollectionChart = lazy(() =>
+  import("@/components/dashboard/charts/AdminCharts").then((m) => ({ default: m.FeeCollectionChart })),
+);
+const StudentsByClassChart = lazy(() =>
+  import("@/components/dashboard/charts/AdminCharts").then((m) => ({ default: m.StudentsByClassChart })),
+);
+const AttendanceTrendChart = lazy(() =>
+  import("@/components/dashboard/charts/AdminCharts").then((m) => ({ default: m.AttendanceTrendChart })),
+);
+const GenderDistributionChart = lazy(() =>
+  import("@/components/dashboard/charts/AdminCharts").then((m) => ({ default: m.GenderDistributionChart })),
+);
+
+// -------------------- Mock data (preserves original) --------------------
 
 const feeCollectionData = [
   { month: "Apr", collected: 15.2, pending: 4.8 },
@@ -87,18 +66,10 @@ const feeCollectionData = [
 ];
 
 const studentsByClass = [
-  { class: "Class 1", students: 180 },
-  { class: "Class 2", students: 195 },
-  { class: "Class 3", students: 210 },
-  { class: "Class 4", students: 225 },
-  { class: "Class 5", students: 240 },
-  { class: "Class 6", students: 255 },
-  { class: "Class 7", students: 268 },
-  { class: "Class 8", students: 285 },
-  { class: "Class 9", students: 310 },
-  { class: "Class 10", students: 320 },
-  { class: "Class 11", students: 180 },
-  { class: "Class 12", students: 179 },
+  { class: "1", students: 180 }, { class: "2", students: 195 }, { class: "3", students: 210 },
+  { class: "4", students: 225 }, { class: "5", students: 240 }, { class: "6", students: 255 },
+  { class: "7", students: 268 }, { class: "8", students: 285 }, { class: "9", students: 310 },
+  { class: "10", students: 320 }, { class: "11", students: 180 }, { class: "12", students: 179 },
 ];
 
 const attendanceTrend = [
@@ -111,419 +82,184 @@ const attendanceTrend = [
 ];
 
 const genderDistribution = [
-  { name: "Boys", value: 1524, color: "hsl(234, 89%, 54%)" },
+  { name: "Boys", value: 1524, color: "hsl(234, 78%, 56%)" },
   { name: "Girls", value: 1323, color: "hsl(340, 82%, 52%)" },
 ];
 
-const recentActivities = [
-  {
-    type: "admission",
-    title: "New Admission",
-    description: "Arjun Kumar enrolled in Class 6-A",
-    time: "10 mins ago",
-  },
-  {
-    type: "fee",
-    title: "Fee Payment",
-    description: "Sneha Patel paid ₹25,000 - Class 8-B",
-    time: "25 mins ago",
-  },
-  {
-    type: "attendance",
-    title: "Attendance Alert",
-    description: "Class 9-C has low attendance today (82%)",
-    time: "1 hour ago",
-  },
-  {
-    type: "staff",
-    title: "Leave Approved",
-    description: "Mr. Rajesh Kumar - 2 days sick leave",
-    time: "2 hours ago",
-  },
-  {
-    type: "exam",
-    title: "Exam Scheduled",
-    description: "Mid-term exams scheduled for Nov 15-25",
-    time: "3 hours ago",
-  },
+const kpis = [
+  { label: "Total Students", value: "2,847", icon: GraduationCap, tone: "primary" as const, change: "+12%", trend: "up" as const },
+  { label: "Teaching Staff", value: "156", icon: Users, tone: "success" as const, change: "+3%", trend: "up" as const },
+  { label: "Non-Teaching", value: "89", icon: UserCheck, tone: "info" as const, change: "0%", trend: "neutral" as const },
+  { label: "Attendance", value: "94.2%", icon: Calendar, tone: "warning" as const, change: "-0.8%", trend: "down" as const },
+  { label: "Fee Collection", value: "₹18.5L", icon: CreditCard, tone: "success" as const, change: "+8%", trend: "up" as const, hint: "This month" },
+  { label: "Salary Expense", value: "₹12.3L", icon: Wallet, tone: "destructive" as const, change: "+2%", trend: "up" as const, hint: "This month" },
 ];
+
+const quickActions: DashboardAction[] = [
+  { id: "add-student", label: "Add Student", icon: UserPlus, to: "/students/add", tone: "primary", permission: "students:create", description: "Enrol new admission" },
+  { id: "add-teacher", label: "Add Teacher", icon: Users, to: "/teachers/add", tone: "info", permission: "teachers:create", description: "Onboard staff" },
+  { id: "mark-attendance", label: "Attendance", icon: ClipboardCheck, to: "/attendance", tone: "warning", permission: "attendance:mark", description: "Mark today" },
+  { id: "collect-fees", label: "Collect Fees", icon: Receipt, to: "/fees", tone: "success", permission: "fees:collect", description: "Record payment" },
+  { id: "announcement", label: "Announcement", icon: Megaphone, to: "/communication", tone: "primary", permission: "comm:send", description: "Broadcast notice" },
+  { id: "reports", label: "Reports", icon: FileText, to: "/reports", tone: "info", permission: "reports:view", description: "View insights" },
+  { id: "timetable", label: "Timetable", icon: BookOpen, to: "/timetable", tone: "default", permission: "timetable:view", description: "Weekly plan" },
+  { id: "payroll", label: "Payroll", icon: Wallet, to: "/payroll", tone: "success", permission: "payroll:run", description: "Run payroll" },
+];
+
+const alerts: DashboardAlert[] = [
+  { id: "a1", title: "Class 9-C attendance below 85%", description: "Today's attendance dropped to 82%. Review with class teacher.", tone: "warning", time: "1 hour ago", to: "/attendance", actionLabel: "Review" },
+  { id: "a2", title: "24 fee reminders pending dispatch", description: "Overdue fees for Nov cycle need reminder SMS.", tone: "destructive", time: "3 hours ago", to: "/fees", actionLabel: "Send" },
+  { id: "a3", title: "Report card deadline: Feb 10", description: "8 subjects still awaiting marks upload.", tone: "warning", time: "Today", to: "/exam/marks-entry", actionLabel: "Open" },
+];
+
+const approvals: ApprovalItem[] = [
+  { id: "ap1", title: "Leave request — 2 days (Sick)", requester: "Rajesh Kumar", meta: "Mathematics", time: "2h ago" },
+  { id: "ap2", title: "Fee waiver — ₹8,000", requester: "Sneha Patel · Class 8-B", meta: "Financial hardship", time: "Yesterday" },
+  { id: "ap3", title: "Exam re-evaluation", requester: "Arjun Kumar · Class 10-A", meta: "Mid-term Physics", time: "Yesterday" },
+];
+
+const activities: ActivityItem[] = [
+  { id: "1", title: "New admission", description: "Arjun Kumar enrolled in Class 6-A", time: "10 min ago", icon: UserPlus, tone: "primary" },
+  { id: "2", title: "Fee payment received", description: "Sneha Patel paid ₹25,000 · Class 8-B", time: "25 min ago", icon: Receipt, tone: "success" },
+  { id: "3", title: "Attendance alert", description: "Class 9-C at 82% today", time: "1 hour ago", icon: AlertTriangle, tone: "warning" },
+  { id: "4", title: "Leave approved", description: "Rajesh Kumar · 2 days sick leave", time: "2 hours ago", icon: ClipboardCheck, tone: "info" },
+  { id: "5", title: "Exam scheduled", description: "Mid-term exams · Nov 15–25", time: "3 hours ago", icon: FileText, tone: "primary" },
+];
+
+const tasks: TaskItem[] = [
+  { id: "t1", title: "Approve November payroll", meta: "156 teachers · ₹12.3L", due: "Today", tone: "warning" },
+  { id: "t2", title: "Review Class 10 report cards", meta: "42 pending signatures", due: "Feb 8", tone: "primary" },
+  { id: "t3", title: "Sign vendor invoices", meta: "5 invoices · ₹1.8L", due: "Feb 10", tone: "info" },
+  { id: "t4", title: "Publish exam timetable", meta: "Mid-term · All classes", due: "Feb 12" },
+];
+
+const events: CalendarEvent[] = [
+  { id: "e1", date: new Date(Date.now() + 86400000).toISOString(), title: "Staff meeting", meta: "10:00 AM · Conference room", tone: "primary" },
+  { id: "e2", date: new Date(Date.now() + 3 * 86400000).toISOString(), title: "Parent-teacher meet", meta: "Classes 6–8", tone: "info" },
+  { id: "e3", date: new Date(Date.now() + 8 * 86400000).toISOString(), title: "Mid-term exams begin", meta: "Classes 9 & 10", tone: "warning" },
+  { id: "e4", date: new Date(Date.now() + 15 * 86400000).toISOString(), title: "Annual sports day", meta: "Whole school", tone: "success" },
+];
+
+const notifications: NotificationItem[] = [
+  { id: "n1", title: "New fee policy circulated", message: "Late fee waiver extended till Feb 20.", time: "1h", unread: true, tone: "primary" },
+  { id: "n2", title: "Board inspection scheduled", message: "CBSE affiliation review on Feb 18.", time: "4h", unread: true, tone: "warning" },
+  { id: "n3", title: "Payroll processed", message: "October salaries disbursed successfully.", time: "Yesterday", tone: "success" },
+];
+
+// -------------------- Command Center --------------------
 
 export default function Dashboard() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page header */}
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-description">
-          Welcome back! Here's what's happening at your school today.
-        </p>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid gap-3 grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
-        {statsCards.map((stat, index) => (
-          <Card
-            key={stat.title}
-            className="stat-card"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className={`stat-card-icon ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
-                </div>
-                <div
-                  className={`flex items-center gap-1 text-xs font-medium ${
-                    stat.trend === "up"
-                      ? "text-success"
-                      : stat.trend === "down"
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {stat.trend === "up" ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : stat.trend === "down" ? (
-                    <TrendingDown className="h-3 w-3" />
-                  ) : null}
-                  {stat.change}
-                </div>
-              </div>
-              <div className="mt-3">
-                <p className="text-2xl font-bold text-foreground">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{stat.title}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts row */}
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Fee Collection Chart */}
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">
-              Fee Collection Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-2 sm:px-6">
-            <div className="h-[220px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={feeCollectionData}>
-                  <defs>
-                    <linearGradient
-                      id="colorCollected"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(160, 84%, 39%)"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(160, 84%, 39%)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(220, 13%, 91%)"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                    tickFormatter={(value) => `₹${value}L`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px hsl(220 20% 10% / 0.1)",
-                    }}
-                    formatter={(value: number) => [`₹${value}L`, ""]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="collected"
-                    stroke="hsl(160, 84%, 39%)"
-                    strokeWidth={2}
-                    fill="url(#colorCollected)"
-                    name="Collected"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="pending"
-                    stroke="hsl(38, 92%, 50%)"
-                    strokeWidth={2}
-                    fill="hsl(38, 92%, 50%)"
-                    fillOpacity={0.1}
-                    name="Pending"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Students by Class */}
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">
-              Students by Class
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-2 sm:px-6">
-            <div className="h-[220px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={studentsByClass}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(220, 13%, 91%)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="class"
-                    tick={{ fontSize: 10, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px hsl(220 20% 10% / 0.1)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="students"
-                    fill="hsl(234, 89%, 54%)"
-                    radius={[4, 4, 0, 0]}
-                    name="Students"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        {/* Attendance Trend */}
-        <Card className="stat-card lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">
-              Weekly Attendance Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-2 sm:px-6">
-            <div className="h-[200px] sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={attendanceTrend}>
-                  <defs>
-                    <linearGradient
-                      id="colorStudents"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(234, 89%, 54%)"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(234, 89%, 54%)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                    <linearGradient
-                      id="colorStaff"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(160, 84%, 39%)"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(160, 84%, 39%)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(220, 13%, 91%)"
-                  />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                  />
-                  <YAxis
-                    domain={[85, 100]}
-                    tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
-                    axisLine={{ stroke: "hsl(220, 13%, 91%)" }}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px hsl(220 20% 10% / 0.1)",
-                    }}
-                    formatter={(value: number) => [`${value}%`, ""]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="students"
-                    stroke="hsl(234, 89%, 54%)"
-                    strokeWidth={2}
-                    fill="url(#colorStudents)"
-                    name="Students"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="staff"
-                    stroke="hsl(160, 84%, 39%)"
-                    strokeWidth={2}
-                    fill="url(#colorStaff)"
-                    name="Staff"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 flex justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-primary" />
-                <span className="text-sm text-muted-foreground">Students</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-success" />
-                <span className="text-sm text-muted-foreground">Staff</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Gender Distribution & Recent Activity */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* Gender Distribution */}
-          <Card className="stat-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">
-                Gender Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[150px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={genderDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {genderDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(0, 0%, 100%)",
-                        border: "1px solid hsl(220, 13%, 91%)",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 6px -1px hsl(220 20% 10% / 0.1)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-6">
-                {genderDistribution.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {item.name}: {item.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="stat-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {recentActivities.slice(0, 4).map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 px-6 py-3"
-                  >
-                    <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground">
-                        {activity.title}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {activity.description}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+    <DashboardShell
+      header={
+        <PageHeader
+          title="Command Center"
+          description="What's happening today, what needs attention, and what to do next."
+          breadcrumbs={[{ label: "Home", href: "/" }, { label: "Dashboard" }]}
+        />
+      }
+      top={
+        <div className="space-y-4">
+          <KPIGrid items={kpis} />
+          <DashboardGrid>
+            <QuickActionsPanel actions={quickActions} columns={4} size="lg" />
+            <AlertCard alerts={alerts} size="lg" />
+          </DashboardGrid>
         </div>
-      </div>
-    </div>
+      }
+      middle={
+        <DashboardGrid>
+          <TrendCard
+            label="Fees this month"
+            value="₹18.5L"
+            change="+8%"
+            trend="up"
+            tone="success"
+            icon={CreditCard}
+            data={feeCollectionData.map((d) => ({ x: d.month, y: d.collected }))}
+            size="sm"
+          />
+          <TrendCard
+            label="Avg attendance"
+            value="94.2%"
+            change="-0.8%"
+            trend="down"
+            tone="warning"
+            icon={Calendar}
+            data={attendanceTrend.map((d) => ({ x: d.day, y: d.students }))}
+            size="sm"
+          />
+          <TrendCard
+            label="New admissions"
+            value="42"
+            change="+12"
+            trend="up"
+            tone="primary"
+            icon={GraduationCap}
+            data={[{ x: 1, y: 6 }, { x: 2, y: 8 }, { x: 3, y: 5 }, { x: 4, y: 9 }, { x: 5, y: 7 }, { x: 6, y: 12 }, { x: 7, y: 15 }]}
+            size="sm"
+          />
+          <TrendCard
+            label="Pending approvals"
+            value={approvals.length}
+            change="3 new"
+            tone="destructive"
+            icon={AlertTriangle}
+            data={[{ x: 1, y: 2 }, { x: 2, y: 4 }, { x: 3, y: 3 }, { x: 4, y: 5 }, { x: 5, y: 3 }, { x: 6, y: 4 }]}
+            size="sm"
+          />
+
+          <ChartCard
+            title="Fee collection trend"
+            description="Collected vs pending (₹ lakhs)"
+            size="xl"
+            chart={<FeeCollectionChart data={feeCollectionData} />}
+          />
+          <ChartCard
+            title="Students by class"
+            description="Distribution across grades"
+            size="md"
+            chart={<StudentsByClassChart data={studentsByClass} />}
+          />
+          <ChartCard
+            title="Weekly attendance"
+            description="Students vs staff"
+            size="xl"
+            chart={<AttendanceTrendChart data={attendanceTrend} />}
+          />
+          <ChartCard
+            title="Gender ratio"
+            description={`${genderDistribution[0].value + genderDistribution[1].value} students`}
+            size="md"
+            chart={<GenderDistributionChart data={genderDistribution} />}
+          />
+
+          <InsightCard
+            title="Attendance dipping on Saturdays"
+            message="Student attendance drops 6% on Saturdays. Consider engagement activities to close the gap."
+            tone="info"
+            size="lg"
+            icon={TrendingUp}
+            action={{ label: "See attendance report", to: "/reports" }}
+          />
+          <InsightCard
+            title="Fee collection ahead of target"
+            message="You're ₹1.2L above forecast for November. Great work."
+            tone="success"
+            size="lg"
+            icon={TrendingUp}
+          />
+        </DashboardGrid>
+      }
+      bottom={
+        <DashboardGrid>
+          <ApprovalQueue items={approvals} size="lg" />
+          <TaskQueue tasks={tasks} size="md" />
+          <ActivityFeed items={activities} size="md" />
+          <CalendarWidget events={events} size="md" />
+          <NotificationPanel items={notifications} size="lg" viewAllHref="/communication" />
+        </DashboardGrid>
+      }
+    />
   );
 }
