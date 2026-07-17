@@ -15,6 +15,7 @@ export interface StatCardV2Props {
   trend?: TrendDirection;
   loading?: boolean;
   onClick?: () => void;
+  bare?: boolean;
 }
 
 /**
