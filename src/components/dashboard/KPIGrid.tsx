@@ -21,7 +21,7 @@ export function KPIGrid({ items, className, children }: KPIGridProps) {
       )}
     >
       {items.map((it) => (
-        <StatCardV2 key={it.label} {...it} size="sm" />
+        <StatCardV2 key={it.label} {...it} bare />
       ))}
       {children}
     </div>
