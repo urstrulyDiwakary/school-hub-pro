@@ -155,7 +155,7 @@ export default function Dashboard() {
         <PageHeader
           title="Command Center"
           description="What's happening today, what needs attention, and what to do next."
-          breadcrumbs={[{ label: "Home", to: "/" }, { label: "Dashboard" }]}
+          breadcrumbs={[{ label: "Home", href: "/" }, { label: "Dashboard" }]}
         />
       }
       top={
