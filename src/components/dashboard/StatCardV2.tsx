@@ -32,6 +32,7 @@ export function StatCardV2({
   trend = "neutral",
   loading,
   onClick,
+  bare,
 }: StatCardV2Props) {
   const c = toneClasses(tone);
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
@@ -43,7 +44,7 @@ export function StatCardV2({
         : "text-muted-foreground";
 
   return (
-    <WidgetCard size={size} loading={loading} className={onClick ? "cursor-pointer" : ""}>
+    <WidgetCard size={size} loading={loading} bare={bare} className={onClick ? "cursor-pointer" : ""}>
       <div
         role={onClick ? "button" : undefined}
         tabIndex={onClick ? 0 : undefined}
