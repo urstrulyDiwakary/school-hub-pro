@@ -54,7 +54,11 @@ export function ChartSkeleton({ height = 240 }: { height?: number }) {
       style={{ height }}
     >
       {Array.from({ length: 12 }).map((_, i) => (
-        <Bar key={i} className="w-full" style={{ height: `${20 + Math.random() * 70}%` } as never} />
+        <div
+          key={i}
+          className="w-full animate-pulse rounded-md bg-gradient-to-r from-muted via-muted/60 to-muted"
+          style={{ height: `${20 + ((i * 37) % 70)}%` }}
+        />
       ))}
     </div>
   );
