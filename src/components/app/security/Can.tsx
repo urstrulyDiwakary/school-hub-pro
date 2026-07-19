@@ -8,23 +8,23 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 interface CanProps {
   permission?: Permission;
-  role?: Role[];
+  roles?: Role[];
   fallback?: ReactNode;
   children: ReactNode;
 }
 
 /** Render children only when the current user satisfies the permission/role guard. */
-export function Can({ permission, role, fallback = null, children }: CanProps) {
+export function Can({ permission, roles, fallback = null, children }: CanProps) {
   const user = useAuthStore((s) => s.user);
   if (!user) return <>{fallback}</>;
-  if (role && !role.includes(user.role)) return <>{fallback}</>;
+  if (roles && !roles.includes(user.role)) return <>{fallback}</>;
   if (permission && !hasPermission(user.role, permission)) return <>{fallback}</>;
   return <>{children}</>;
 }
 
 interface PermissionButtonProps extends ButtonProps {
   permission?: Permission;
-  role?: Role[];
+  roles?: Role[];
   denyMessage?: string;
 }
 
@@ -35,7 +35,7 @@ interface PermissionButtonProps extends ButtonProps {
  */
 export function PermissionButton({
   permission,
-  role,
+  roles,
   denyMessage = "You don't have permission for this action.",
   children,
   ...rest
@@ -43,7 +43,7 @@ export function PermissionButton({
   const user = useAuthStore((s) => s.user);
   const allowed =
     !!user &&
-    (!role || role.includes(user.role)) &&
+    (!roles || roles.includes(user.role)) &&
     (!permission || hasPermission(user.role, permission));
 
   if (allowed) return <Button {...rest}>{children}</Button>;
@@ -64,14 +64,14 @@ export function PermissionButton({
 
 interface PermissionMenuItemProps extends React.ComponentProps<typeof DropdownMenuItem> {
   permission?: Permission;
-  role?: Role[];
+  roles?: Role[];
 }
 
-export function PermissionMenuItem({ permission, role, ...rest }: PermissionMenuItemProps) {
+export function PermissionMenuItem({ permission, roles, ...rest }: PermissionMenuItemProps) {
   const user = useAuthStore((s) => s.user);
   const allowed =
     !!user &&
-    (!role || role.includes(user.role)) &&
+    (!roles || roles.includes(user.role)) &&
     (!permission || hasPermission(user.role, permission));
   if (!allowed) return null;
   return <DropdownMenuItem {...rest} />;
