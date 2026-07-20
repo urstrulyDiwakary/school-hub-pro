@@ -19,7 +19,7 @@ import {
   type EntityTab,
   type ActivityEvent,
 } from "@/components/app";
-import { StudentExportHistory } from "@/components/teacher/student-detail/StudentExportHistory";
+import StudentExportHistory from "@/components/teacher/student-detail/StudentExportHistory";
 import { toast } from "sonner";
 
 const studentData = {
@@ -267,7 +267,7 @@ export default function StudentProfile() {
       title="Student Profile"
       description={`${s.name} · ${s.admissionNo}`}
       breadcrumbs={[
-        { label: "Students", href: "/students", icon: <Home className="h-3.5 w-3.5" /> },
+        { label: "Students", href: "/students" },
         { label: s.name },
       ]}
     >
