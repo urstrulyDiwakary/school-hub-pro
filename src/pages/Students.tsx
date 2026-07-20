@@ -1,629 +1,280 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Search,
-  Plus,
-  Filter,
-  Download,
-  MoreHorizontal,
-  Eye,
-  Pencil,
-  ArrowRightLeft,
-  UserX,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Download, Eye, Pencil, ArrowRightLeft, UserX, Mail, MessageSquare, FileText } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  PageLayout,
+  StatisticsRow,
+  FilterBar,
+  DataTableV2,
+  AppDrawer,
+  DeleteDialog,
+  type ActiveFilter,
+  type BulkAction,
+  type RowAction,
+} from "@/components/app";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import CombinedExportDialog from "@/components/students/CombinedExportDialog";
+import E2EStudentDetailFixture from "@/components/teacher/E2EStudentDetailFixture";
 import { resolveEffectivePermissions } from "@/lib/userRole";
-import { FileText } from "lucide-react";
 
-// Mock student data
-const studentsData = [
-  {
-    id: "1",
-    admissionNo: "ADM2024001",
-    name: "Arjun Sharma",
-    class: "10",
-    section: "A",
-    parentName: "Rajesh Sharma",
-    mobile: "+91 98765 43210",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "2",
-    admissionNo: "ADM2024002",
-    name: "Priya Patel",
-    class: "10",
-    section: "A",
-    parentName: "Vikram Patel",
-    mobile: "+91 98765 43211",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "3",
-    admissionNo: "ADM2024003",
-    name: "Rahul Kumar",
-    class: "9",
-    section: "B",
-    parentName: "Suresh Kumar",
-    mobile: "+91 98765 43212",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "4",
-    admissionNo: "ADM2024004",
-    name: "Sneha Reddy",
-    class: "8",
-    section: "A",
-    parentName: "Krishna Reddy",
-    mobile: "+91 98765 43213",
-    status: "inactive",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "5",
-    admissionNo: "ADM2024005",
-    name: "Amit Singh",
-    class: "10",
-    section: "B",
-    parentName: "Harpreet Singh",
-    mobile: "+91 98765 43214",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "6",
-    admissionNo: "ADM2024006",
-    name: "Kavya Nair",
-    class: "9",
-    section: "A",
-    parentName: "Sunil Nair",
-    mobile: "+91 98765 43215",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "7",
-    admissionNo: "ADM2024007",
-    name: "Rohan Gupta",
-    class: "8",
-    section: "B",
-    parentName: "Anil Gupta",
-    mobile: "+91 98765 43216",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "8",
-    admissionNo: "ADM2024008",
-    name: "Ananya Verma",
-    class: "7",
-    section: "A",
-    parentName: "Sanjay Verma",
-    mobile: "+91 98765 43217",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "9",
-    admissionNo: "ADM2024009",
-    name: "Vikram Reddy",
-    class: "10",
-    section: "A",
-    parentName: "Mohan Reddy",
-    mobile: "+91 98765 43218",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "10",
-    admissionNo: "ADM2024010",
-    name: "Meera Iyer",
-    class: "9",
-    section: "A",
-    parentName: "Ganesh Iyer",
-    mobile: "+91 98765 43219",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "11",
-    admissionNo: "ADM2024011",
-    name: "Aditya Joshi",
-    class: "11",
-    section: "B",
-    parentName: "Deepak Joshi",
-    mobile: "+91 98765 43220",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "12",
-    admissionNo: "ADM2024012",
-    name: "Shreya Das",
-    class: "12",
-    section: "A",
-    parentName: "Bibhuti Das",
-    mobile: "+91 98765 43221",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "13",
-    admissionNo: "ADM2024013",
-    name: "Karan Mehta",
-    class: "10",
-    section: "B",
-    parentName: "Nitin Mehta",
-    mobile: "+91 98765 43222",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "14",
-    admissionNo: "ADM2024014",
-    name: "Ishita Banerjee",
-    class: "9",
-    section: "C",
-    parentName: "Amit Banerjee",
-    mobile: "+91 98765 43223",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "15",
-    admissionNo: "ADM2024015",
-    name: "Aryan Malhotra",
-    class: "8",
-    section: "A",
-    parentName: "Rohit Malhotra",
-    mobile: "+91 98765 43224",
-    status: "inactive",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "16",
-    admissionNo: "ADM2024016",
-    name: "Diya Chauhan",
-    class: "7",
-    section: "B",
-    parentName: "Mahesh Chauhan",
-    mobile: "+91 98765 43225",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "17",
-    admissionNo: "ADM2024017",
-    name: "Siddharth Pillai",
-    class: "11",
-    section: "A",
-    parentName: "Ravi Pillai",
-    mobile: "+91 98765 43226",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "18",
-    admissionNo: "ADM2024018",
-    name: "Tanvi Kulkarni",
-    class: "12",
-    section: "B",
-    parentName: "Prakash Kulkarni",
-    mobile: "+91 98765 43227",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
-  {
-    id: "19",
-    admissionNo: "ADM2024019",
-    name: "Yash Agarwal",
-    class: "6",
-    section: "A",
-    parentName: "Sandeep Agarwal",
-    mobile: "+91 98765 43228",
-    status: "active",
-    gender: "Male",
-    avatar: "",
-  },
-  {
-    id: "20",
-    admissionNo: "ADM2024020",
-    name: "Riya Choudhary",
-    class: "10",
-    section: "C",
-    parentName: "Vinod Choudhary",
-    mobile: "+91 98765 43229",
-    status: "active",
-    gender: "Female",
-    avatar: "",
-  },
+interface StudentRow {
+  id: string;
+  admissionNo: string;
+  name: string;
+  class: string;
+  section: string;
+  parentName: string;
+  mobile: string;
+  email: string;
+  status: "active" | "inactive";
+  gender: "Male" | "Female";
+  avatar?: string;
+}
+
+const studentsData: StudentRow[] = [
+  { id: "1", admissionNo: "ADM2024001", name: "Arjun Sharma", class: "10", section: "A", parentName: "Rajesh Sharma", mobile: "+91 98765 43210", email: "arjun@school.edu", status: "active", gender: "Male" },
+  { id: "2", admissionNo: "ADM2024002", name: "Priya Patel", class: "10", section: "A", parentName: "Vikram Patel", mobile: "+91 98765 43211", email: "priya@school.edu", status: "active", gender: "Female" },
+  { id: "3", admissionNo: "ADM2024003", name: "Rahul Kumar", class: "9", section: "B", parentName: "Suresh Kumar", mobile: "+91 98765 43212", email: "rahul@school.edu", status: "active", gender: "Male" },
+  { id: "4", admissionNo: "ADM2024004", name: "Sneha Reddy", class: "8", section: "A", parentName: "Krishna Reddy", mobile: "+91 98765 43213", email: "sneha@school.edu", status: "inactive", gender: "Female" },
+  { id: "5", admissionNo: "ADM2024005", name: "Amit Singh", class: "10", section: "B", parentName: "Harpreet Singh", mobile: "+91 98765 43214", email: "amit@school.edu", status: "active", gender: "Male" },
+  { id: "6", admissionNo: "ADM2024006", name: "Kavya Nair", class: "9", section: "A", parentName: "Sunil Nair", mobile: "+91 98765 43215", email: "kavya@school.edu", status: "active", gender: "Female" },
+  { id: "7", admissionNo: "ADM2024007", name: "Rohan Gupta", class: "8", section: "B", parentName: "Anil Gupta", mobile: "+91 98765 43216", email: "rohan@school.edu", status: "active", gender: "Male" },
+  { id: "8", admissionNo: "ADM2024008", name: "Ananya Verma", class: "7", section: "A", parentName: "Sanjay Verma", mobile: "+91 98765 43217", email: "ananya@school.edu", status: "active", gender: "Female" },
+  { id: "9", admissionNo: "ADM2024009", name: "Vikram Reddy", class: "10", section: "A", parentName: "Mohan Reddy", mobile: "+91 98765 43218", email: "vikram@school.edu", status: "active", gender: "Male" },
+  { id: "10", admissionNo: "ADM2024010", name: "Meera Iyer", class: "9", section: "A", parentName: "Ganesh Iyer", mobile: "+91 98765 43219", email: "meera@school.edu", status: "active", gender: "Female" },
+  { id: "11", admissionNo: "ADM2024011", name: "Aditya Joshi", class: "11", section: "B", parentName: "Deepak Joshi", mobile: "+91 98765 43220", email: "aditya@school.edu", status: "active", gender: "Male" },
+  { id: "12", admissionNo: "ADM2024012", name: "Shreya Das", class: "12", section: "A", parentName: "Bibhuti Das", mobile: "+91 98765 43221", email: "shreya@school.edu", status: "active", gender: "Female" },
 ];
 
-const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+const classes = ["6", "7", "8", "9", "10", "11", "12"];
 const sections = ["A", "B", "C", "D"];
-const genders = ["Male", "Female"];
+
+function initials(name: string) {
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function StatCard({ label, value, tone }: { label: string; value: string; tone?: "success" | "muted" | "primary" }) {
+  const toneClass =
+    tone === "success" ? "text-success" : tone === "primary" ? "text-primary" : tone === "muted" ? "text-muted-foreground" : "text-foreground";
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className={`mt-1 text-2xl font-semibold ${toneClass}`}>{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Students() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedSection, setSelectedSection] = useState<string>("");
-  const [selectedGender, setSelectedGender] = useState<string>("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
+  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedSection, setSelectedSection] = useState("");
+  const [selectedGender, setSelectedGender] = useState("");
+  const [quickView, setQuickView] = useState<StudentRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
   const [combinedOpen, setCombinedOpen] = useState(false);
+  const [combinedSelection, setCombinedSelection] = useState<StudentRow[]>([]);
 
   const perms = resolveEffectivePermissions();
   const canCombine = perms.pdf && perms.effectiveRole === "admin";
 
-  const toggleSelected = (id: string, checked: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id); else next.delete(id);
-      return next;
-    });
-  };
+  const data = useMemo(
+    () =>
+      studentsData.filter(
+        (s) =>
+          (!selectedClass || s.class === selectedClass) &&
+          (!selectedSection || s.section === selectedSection) &&
+          (!selectedGender || s.gender === selectedGender),
+      ),
+    [selectedClass, selectedSection, selectedGender],
+  );
 
+  const activeFilters: ActiveFilter[] = [
+    selectedClass && { key: "class", label: "Class", value: selectedClass, onRemove: () => setSelectedClass("") },
+    selectedSection && { key: "section", label: "Section", value: selectedSection, onRemove: () => setSelectedSection("") },
+    selectedGender && { key: "gender", label: "Gender", value: selectedGender, onRemove: () => setSelectedGender("") },
+  ].filter(Boolean) as ActiveFilter[];
 
-  const filteredStudents = studentsData.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.admissionNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.parentName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass =
-      !selectedClass || student.class === selectedClass;
-    const matchesSection =
-      !selectedSection || student.section === selectedSection;
-    const matchesGender =
-      !selectedGender || student.gender === selectedGender;
+  const columns: ColumnDef<StudentRow>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Student",
+        cell: ({ row }) => {
+          const s = row.original;
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={s.avatar} alt={s.name} />
+                <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{initials(s.name)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{s.name}</p>
+                <p className="text-xs text-muted-foreground">{s.gender}</p>
+              </div>
+            </div>
+          );
+        },
+      },
+      { accessorKey: "admissionNo", header: "Admission No.", cell: (c) => <span className="font-mono text-sm">{c.getValue<string>()}</span> },
+      {
+        id: "class",
+        header: "Class",
+        accessorFn: (r) => `${r.class}-${r.section}`,
+        cell: ({ getValue }) => (
+          <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">{getValue<string>()}</span>
+        ),
+      },
+      { accessorKey: "parentName", header: "Parent" },
+      { accessorKey: "mobile", header: "Mobile", cell: (c) => <span className="text-muted-foreground">{c.getValue<string>()}</span> },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: (c) => (
+          <span className={c.getValue<string>() === "active" ? "badge-active" : "badge-inactive"}>
+            {c.getValue<string>() === "active" ? "Active" : "Inactive"}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
 
-    return matchesSearch && matchesClass && matchesSection && matchesGender;
-  });
+  const bulkActions: BulkAction<StudentRow>[] = [
+    { label: "Bulk Edit", icon: <Pencil className="mr-1 h-3.5 w-3.5" />, onClick: (rows) => toast.info(`Bulk edit ${rows.length} students`) },
+    { label: "Export", icon: <Download className="mr-1 h-3.5 w-3.5" />, onClick: (rows) => toast.success(`Exported ${rows.length} rows`) },
+    { label: "SMS", icon: <MessageSquare className="mr-1 h-3.5 w-3.5" />, onClick: (rows) => toast.success(`SMS queued for ${rows.length} parents`) },
+    { label: "Email", icon: <Mail className="mr-1 h-3.5 w-3.5" />, onClick: (rows) => toast.success(`Email queued for ${rows.length} parents`) },
+    ...(canCombine
+      ? [{
+          label: "Combined PDF",
+          icon: <FileText className="mr-1 h-3.5 w-3.5" />,
+          onClick: (rows: StudentRow[]) => { setCombinedSelection(rows); setCombinedOpen(true); },
+        }]
+      : []),
+  ];
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  const rowActions: RowAction<StudentRow>[] = [
+    { label: "Quick view", onClick: (r) => setQuickView(r) },
+    { label: "Open profile", onClick: (r) => navigate(`/students/${r.id}`) },
+    { label: "Transfer class", onClick: (r) => toast.info(`Transfer ${r.name}`) },
+    { label: "Deactivate", destructive: true, onClick: (r) => setDeleteTarget(r) },
+  ];
+
+  const exportCsv = (rows: StudentRow[]) => {
+    const header = ["Admission No", "Name", "Class", "Section", "Parent", "Mobile", "Status"];
+    const body = rows.map((r) => [r.admissionNo, r.name, r.class, r.section, r.parentName, r.mobile, r.status]);
+    const csv = [header, ...body].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "students.csv"; a.click(); URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} students`);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <E2EStudentDetailFixture />
-      {/* Page header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="page-header mb-0">
-          <h1 className="page-title">Students</h1>
-          <p className="page-description">
-            Manage all student records and information
-          </p>
-        </div>
+    <PageLayout
+      title="Students"
+      description="Manage all student records and information"
+      breadcrumbs={[{ label: "People" }, { label: "Students" }]}
+      actions={
         <Link to="/students/add">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Student
-          </Button>
+          <Button className="gap-2"><Plus className="h-4 w-4" /> Add Student</Button>
         </Link>
-      </div>
+      }
+      stats={
+        <StatisticsRow>
+          <StatCard label="Total Students" value="2,847" />
+          <StatCard label="Active" value="2,798" tone="success" />
+          <StatCard label="Inactive" value="49" tone="muted" />
+          <StatCard label="New This Month" value="24" tone="primary" />
+        </StatisticsRow>
+      }
+      filters={
+        <FilterBar active={activeFilters} onClearAll={() => { setSelectedClass(""); setSelectedSection(""); setSelectedGender(""); }}>
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Class" /></SelectTrigger>
+            <SelectContent>{classes.map((c) => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={selectedSection} onValueChange={setSelectedSection}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Section" /></SelectTrigger>
+            <SelectContent>{sections.map((s) => <SelectItem key={s} value={s}>Section {s}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={selectedGender} onValueChange={setSelectedGender}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Gender" /></SelectTrigger>
+            <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+          </Select>
+        </FilterBar>
+      }
+    >
+      <E2EStudentDetailFixture />
+      <DataTableV2
+        tableId="students"
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search by name, admission no, parent…"
+        bulkActions={bulkActions}
+        rowActions={rowActions}
+        onRowClick={(r) => setQuickView(r)}
+        onExportCsv={exportCsv}
+        emptyTitle="No students match"
+        emptyDescription="Try clearing filters or refining the search."
+        stickyFirstColumn
+      />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Students</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">2,847</p>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Active</p>
-            <p className="mt-1 text-2xl font-bold text-success">2,798</p>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Inactive</p>
-            <p className="mt-1 text-2xl font-bold text-muted-foreground">49</p>
-          </CardContent>
-        </Card>
-        <Card className="stat-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">New This Month</p>
-            <p className="mt-1 text-2xl font-bold text-primary">24</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="stat-card">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-              {/* Search */}
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search students..."
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {/* Class filter */}
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  {classes.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      Class {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Section filter */}
-              <Select
-                value={selectedSection}
-                onValueChange={setSelectedSection}
-              >
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sections</SelectItem>
-                  {sections.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      Section {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Gender filter */}
-              <Select value={selectedGender} onValueChange={setSelectedGender}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {genders.map((g) => (
-                    <SelectItem key={g} value={g}>
-                      {g}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              {canCombine && selectedIds.size > 0 && (
-                <Button
-                  className="gap-2"
-                  onClick={() => setCombinedOpen(true)}
-                >
-                  <FileText className="h-4 w-4" />
-                  Combined PDF ({selectedIds.size})
-                </Button>
-              )}
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
+      <AppDrawer
+        open={!!quickView}
+        onOpenChange={(v) => !v && setQuickView(null)}
+        title={quickView?.name}
+        description={quickView ? `${quickView.admissionNo} · Class ${quickView.class}-${quickView.section}` : undefined}
+        size="md"
+        footer={
+          quickView && (
+            <>
+              <Button variant="outline" onClick={() => setQuickView(null)}>Close</Button>
+              <Button onClick={() => { const id = quickView.id; setQuickView(null); navigate(`/students/${id}`); }}>
+                <Eye className="mr-1.5 h-4 w-4" /> Open profile
               </Button>
-              <Button variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </>
+          )
+        }
+      >
+        {quickView && (
+          <dl className="grid grid-cols-2 gap-4 text-sm">
+            <div><dt className="text-caption">Parent</dt><dd className="mt-0.5 font-medium">{quickView.parentName}</dd></div>
+            <div><dt className="text-caption">Mobile</dt><dd className="mt-0.5 font-medium">{quickView.mobile}</dd></div>
+            <div><dt className="text-caption">Email</dt><dd className="mt-0.5 truncate font-medium">{quickView.email}</dd></div>
+            <div><dt className="text-caption">Gender</dt><dd className="mt-0.5 font-medium">{quickView.gender}</dd></div>
+            <div><dt className="text-caption">Status</dt><dd className="mt-0.5"><span className={quickView.status === "active" ? "badge-active" : "badge-inactive"}>{quickView.status}</span></dd></div>
+          </dl>
+        )}
+      </AppDrawer>
 
-      {/* Students Table */}
-      <Card className="stat-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {canCombine && (
-                  <th className="w-10">
-                    <Checkbox
-                      aria-label="Select all visible students"
-                      checked={
-                        filteredStudents.length > 0 &&
-                        filteredStudents.every((s) => selectedIds.has(s.id))
-                      }
-                      onCheckedChange={(v) => {
-                        const next = new Set(selectedIds);
-                        if (v) filteredStudents.forEach((s) => next.add(s.id));
-                        else filteredStudents.forEach((s) => next.delete(s.id));
-                        setSelectedIds(next);
-                      }}
-                    />
-                  </th>
-                )}
-                <th>Student</th>
-                <th>Admission No.</th>
-                <th>Class & Section</th>
-                <th>Parent Name</th>
-                <th>Mobile</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStudents.map((student) => (
-                <tr key={student.id} data-state={selectedIds.has(student.id) ? "selected" : undefined}>
-                  {canCombine && (
-                    <td>
-                      <Checkbox
-                        aria-label={`Select ${student.name}`}
-                        checked={selectedIds.has(student.id)}
-                        onCheckedChange={(v) => toggleSelected(student.id, Boolean(v))}
-                      />
-                    </td>
-                  )}
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={student.avatar} alt={student.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                          {getInitials(student.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {student.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {student.gender}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="font-mono text-sm">{student.admissionNo}</td>
-                  <td>
-                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                      {student.class}-{student.section}
-                    </span>
-                  </td>
-                  <td>{student.parentName}</td>
-                  <td className="text-muted-foreground">{student.mobile}</td>
-                  <td>
-                    <span
-                      className={
-                        student.status === "active"
-                          ? "badge-active"
-                          : "badge-inactive"
-                      }
-                    >
-                      {student.status === "active" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <Link to={`/students/${student.id}`}>
-                            <DropdownMenuItem className="gap-2">
-                              <Eye className="h-4 w-4" />
-                              View Profile
-                            </DropdownMenuItem>
-                          </Link>
-                          <DropdownMenuItem className="gap-2">
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <ArrowRightLeft className="h-4 w-4" />
-                            Transfer Class
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
-                            <UserX className="h-4 w-4" />
-                            Disable
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-4">
-          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-            Showing <span className="font-medium">1</span> to{" "}
-            <span className="font-medium">{filteredStudents.length}</span> of{" "}
-            <span className="font-medium">2,847</span> students
-          </p>
-          <div className="flex items-center justify-center gap-1 sm:gap-2">
-            <Button variant="outline" size="sm" disabled className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              1
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
-              2
-            </Button>
-            <Button variant="outline" size="sm" className="hidden xs:flex h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
-              3
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </Card>
+      <DeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => !v && setDeleteTarget(null)}
+        title="Deactivate student?"
+        description={deleteTarget ? `${deleteTarget.name} will no longer appear in active rosters.` : ""}
+        confirmLabel="Deactivate"
+        onConfirm={() => {
+          const name = deleteTarget?.name;
+          setDeleteTarget(null);
+          toast.success(`${name} deactivated`, {
+            action: { label: "Undo", onClick: () => toast.info(`${name} restored`) },
+          });
+        }}
+      />
 
       <CombinedExportDialog
         open={combinedOpen}
         onOpenChange={setCombinedOpen}
-        students={studentsData
-          .filter((s) => selectedIds.has(s.id))
-          .map((s) => ({
-            id: s.id,
-            admissionNo: s.admissionNo,
-            name: s.name,
-            className: `${s.class}-${s.section}`,
-          }))}
+        students={combinedSelection.map((s) => ({ id: s.id, admissionNo: s.admissionNo, name: s.name, className: `${s.class}-${s.section}` }))}
       />
-    </div>
+    </PageLayout>
   );
 }
