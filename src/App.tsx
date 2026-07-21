@@ -84,9 +84,11 @@ const queryClient = new QueryClient();
 
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { CommandPalette } from "./components/shell/CommandPalette";
+import { PlatformProvider } from "./platform";
 
 const App = () => (
   <ThemeProvider>
+    <PlatformProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
