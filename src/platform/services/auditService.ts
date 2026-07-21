@@ -39,7 +39,7 @@ export const auditService = {
   list(filter?: Partial<Pick<AuditEvent, "entity" | "entityId" | "userId" | "action">>): AuditEvent[] {
     if (!filter) return [...buffer];
     return buffer.filter((e) =>
-      Object.entries(filter).every(([k, v]) => (e as Record<string, unknown>)[k] === v),
+      Object.entries(filter).every(([k, v]) => (e as unknown as Record<string, unknown>)[k] === v),
     );
   },
   subscribe(l: Listener) {
