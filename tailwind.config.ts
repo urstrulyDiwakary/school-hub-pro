@@ -126,6 +126,10 @@ export default {
           from: { opacity: "0", transform: "translateX(10px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -133,7 +137,9 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        marquee: "marquee 40s linear infinite",
       },
+
     },
   },
   plugins: [require("tailwindcss-animate")],
