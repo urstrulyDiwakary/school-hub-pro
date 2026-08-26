@@ -24,7 +24,6 @@ import {
   Trophy,
   Clock,
   PlaneTakeoff,
-  Megaphone,
 } from "lucide-react";
 
 export type Portal = "admin" | "teacher" | "parent" | "student";
@@ -174,7 +173,6 @@ const mobileNav: Record<Portal, NavItem[]> = {
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { title: "Students", icon: Users, href: "/students" },
     { title: "Teachers", icon: GraduationCap, href: "/teachers" },
-    { title: "Notices", icon: Megaphone, href: "/notices" },
     { title: "Fees", icon: CreditCard, href: "/fees" },
     { title: "Reports", icon: BarChart3, href: "/reports" },
     { title: "Attendance", icon: CalendarCheck, href: "/attendance" },
@@ -187,7 +185,6 @@ const mobileNav: Record<Portal, NavItem[]> = {
   teacher: [
     { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
     { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
-    { title: "Notices", icon: Megaphone, href: "/notices" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks", icon: ClipboardCheck, href: "/teacher/marks" },
     { title: "Remarks", icon: MessageSquare, href: "/teacher/remarks" },
@@ -198,7 +195,6 @@ const mobileNav: Record<Portal, NavItem[]> = {
   parent: [
     { title: "Dashboard", icon: LayoutDashboard, href: "/parent/dashboard" },
     { title: "Attendance", icon: CalendarCheck, href: "/parent/attendance" },
-    { title: "Notices", icon: Megaphone, href: "/notices" },
     { title: "Fees", icon: CreditCard, href: "/parent/fees" },
     { title: "Results", icon: Trophy, href: "/parent/results" },
     { title: "Child", icon: User, href: "/parent/child" },
@@ -209,7 +205,6 @@ const mobileNav: Record<Portal, NavItem[]> = {
   student: [
     { title: "Dashboard", icon: LayoutDashboard, href: "/student/dashboard" },
     { title: "Timetable", icon: Clock, href: "/student/timetable" },
-    { title: "Notices", icon: Megaphone, href: "/notices" },
     { title: "Homework", icon: BookOpen, href: "/student/homework" },
     { title: "Results", icon: Trophy, href: "/student/results" },
     { title: "Attendance", icon: CalendarCheck, href: "/student/attendance" },
