@@ -16,6 +16,8 @@ export function BottomNavBar() {
   const location = useLocation();
   const portal = resolvePortalFromPath(location.pathname);
   const { primary, more } = getMobileNav(portal);
+  const { user } = useAuthStore();
+  const { unreadCount } = useAnnouncements(user?.role);
 
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(href + "/");
