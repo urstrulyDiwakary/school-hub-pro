@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { MoreHorizontal } from "lucide-react";
+import { Megaphone, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/auth";
+import { useAnnouncements } from "@/lib/announcementStore";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +16,8 @@ export function BottomNavBar() {
   const location = useLocation();
   const portal = resolvePortalFromPath(location.pathname);
   const { primary, more } = getMobileNav(portal);
+  const { user } = useAuthStore();
+  const { unreadCount } = useAnnouncements(user?.role);
 
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(href + "/");
@@ -38,6 +42,27 @@ export function BottomNavBar() {
             </Link>
           );
         })}
+
+        {/* Notices — always available, with live unread badge */}
+        <Link
+          to="/notices"
+          aria-label={`Notices${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+          className={cn(
+            "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-colors",
+            isActive("/notices") ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <span className="relative">
+            <Megaphone className="h-5 w-5 shrink-0" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-2 -top-1 min-w-[15px] rounded-full bg-primary px-1 text-[9px] font-semibold leading-[15px] text-primary-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </span>
+          <span className="truncate">Notices</span>
+          {isActive("/notices") && <span className="h-1 w-1 rounded-full bg-primary" />}
+        </Link>
 
         {more.length > 0 && (
           <Sheet>

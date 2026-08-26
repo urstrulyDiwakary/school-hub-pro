@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { Megaphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/auth";
@@ -11,14 +11,18 @@ import { cn } from "@/lib/utils";
  * Scrolling notification banner shown under the header on every page.
  * Marquee pauses on hover/focus; tapping an item opens the full notice.
  */
+const BannerMountedContext = createContext(false);
+
 export function AnnouncementBanner({ className }: { className?: string }) {
+  const alreadyMounted = useContext(BannerMountedContext);
   const { user } = useAuthStore();
   const { items } = useAnnouncements(user?.role);
   const [dismissed, setDismissed] = useState(false);
   const [active, setActive] = useState<Announcement | null>(null);
 
   const ticker = items.slice(0, 8);
-  if (dismissed || ticker.length === 0) return null;
+  // Rendered by both the app shell and PortalPage — only the outermost shows.
+  if (alreadyMounted || dismissed || ticker.length === 0) return null;
 
   const row = (ariaHidden?: boolean) => (
     <div className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={ariaHidden}>
@@ -79,4 +83,12 @@ export function AnnouncementBanner({ className }: { className?: string }) {
       />
     </>
   );
+}
+
+/**
+ * Marks the subtree as already containing a banner, so nested mounts
+ * (e.g. PortalPage inside DashboardLayout) don't render a duplicate ticker.
+ */
+export function AnnouncementBannerBoundary({ children }: { children: React.ReactNode }) {
+  return <BannerMountedContext.Provider value={true}>{children}</BannerMountedContext.Provider>;
 }

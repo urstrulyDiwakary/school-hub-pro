@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 interface PortalPageProps {
   title: string;
@@ -11,6 +12,8 @@ interface PortalPageProps {
 export function PortalPage({ title, description, actions, children }: PortalPageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* No-ops when the app shell already renders the ticker above. */}
+      <AnnouncementBanner className="-mx-4 -mt-4 lg:-mx-6 lg:-mt-6" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">{title}</h1>

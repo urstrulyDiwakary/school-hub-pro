@@ -29,6 +29,7 @@ import Subjects from "./pages/Subjects";
 import Timetable from "./pages/Timetable";
 import Attendance from "./pages/Attendance";
 import Communication from "./pages/Communication";
+import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import ExportPermissions from "./pages/ExportPermissions";
@@ -156,6 +157,7 @@ const App = () => (
 
               {/* Communication */}
               <Route path="/communication" element={<Communication />} />
+              <Route path="/notices" element={<Notices />} />
 
               {/* Reports */}
               <Route path="/reports" element={<Reports />} />
