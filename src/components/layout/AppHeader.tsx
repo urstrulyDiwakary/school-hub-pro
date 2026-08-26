@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bell, Menu, User, LogOut, Settings as SettingsIcon, Plus, HelpCircle, ChevronDown, Building2, CalendarRange } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
