@@ -14,6 +14,10 @@ import { useAuthStore } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/auth/types";
 import { CommandPaletteTrigger } from "@/components/shell/CommandPalette";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
+import { useAnnouncements, type Announcement } from "@/lib/announcementStore";
+import { AnnouncementDetailDialog } from "@/components/announcements/AnnouncementDetailDialog";
+import { categoryMeta, formatWhen } from "@/components/announcements/meta";
+import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   onMenuClick: () => void;
@@ -22,6 +26,13 @@ interface AppHeaderProps {
 export function AppHeader({ onMenuClick }: AppHeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { items, unreadCount, isRead, markRead, markAllRead } = useAnnouncements(user?.role);
+  const [activeNotice, setActiveNotice] = useState<Announcement | null>(null);
+
+  const openNotice = (a: Announcement) => {
+    markRead(a.id);
+    setActiveNotice(a);
+  };
 
   const handleLogout = () => {
     logout();
