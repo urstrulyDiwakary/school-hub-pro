@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { MoreHorizontal } from "lucide-react";
+import { Megaphone, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/auth";
+import { useAnnouncements } from "@/lib/announcementStore";
 import {
   Sheet,
   SheetContent,
