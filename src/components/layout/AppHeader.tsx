@@ -113,35 +113,90 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Notifications */}
+        {/* Notifications — live announcement feed */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              aria-label={`Notifications, ${unreadCount} unread`}
+            >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-[18px] text-primary-foreground">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notifications</span>
-              <span className="text-[10px] font-normal text-muted-foreground">2 unread</span>
+              <span className="text-[10px] font-normal text-muted-foreground">
+                {unreadCount} unread
+              </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-              <p className="text-sm font-medium">Annual Sports Day</p>
-              <p className="text-xs text-muted-foreground">Participation forms due by 12 Jun</p>
-              <p className="text-xs text-muted-foreground">1 hour ago</p>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-              <p className="text-sm font-medium">PTM Scheduled</p>
-              <p className="text-xs text-muted-foreground">Parent-Teacher Meeting on 14 Jun</p>
-              <p className="text-xs text-muted-foreground">Yesterday</p>
-            </DropdownMenuItem>
+            {items.length === 0 ? (
+              <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                No announcements yet.
+              </p>
+            ) : (
+              items.slice(0, 6).map((a) => {
+                const Meta = categoryMeta[a.category];
+                const unread = !isRead(a.id);
+                return (
+                  <DropdownMenuItem
+                    key={a.id}
+                    onSelect={() => openNotice(a)}
+                    className={cn("flex items-start gap-2 py-3", unread && "bg-primary/[0.04]")}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
+                        Meta.chip,
+                      )}
+                      aria-hidden="true"
+                    >
+                      <Meta.icon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{a.title}</span>
+                      <span className="block line-clamp-2 text-xs text-muted-foreground">
+                        {a.message}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {formatWhen(a.createdAt)}
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })
+            )}
+            <DropdownMenuSeparator />
+            <div className="flex items-center justify-between gap-2 px-1 py-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+              >
+                Mark all read
+              </Button>
+              <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate("/notices")}>
+                View all
+              </Button>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <AnnouncementDetailDialog
+          announcement={activeNotice}
+          open={!!activeNotice}
+          onOpenChange={(o) => !o && setActiveNotice(null)}
+        />
 
         {/* Help */}
         <Button variant="ghost" size="icon" aria-label="Help & docs" className="hidden sm:inline-flex">
