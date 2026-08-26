@@ -84,3 +84,11 @@ export function AnnouncementBanner({ className }: { className?: string }) {
     </>
   );
 }
+
+/**
+ * Marks the subtree as already containing a banner, so nested mounts
+ * (e.g. PortalPage inside DashboardLayout) don't render a duplicate ticker.
+ */
+export function AnnouncementBannerBoundary({ children }: { children: React.ReactNode }) {
+  return <BannerMountedContext.Provider value={true}>{children}</BannerMountedContext.Provider>;
+}
