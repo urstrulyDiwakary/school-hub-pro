@@ -63,7 +63,7 @@ export function AnnouncementFeed({
         {items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">No announcements yet.</p>
         ) : (
-          <ScrollArea style={{ maxHeight }} className="pr-3">
+          <ScrollArea style={{ maxHeight }} className="w-full pr-3 [&>div>div]:!block">
             <ul className="space-y-2">
               {items.map((a) => {
                 const Meta = categoryMeta[a.category];
