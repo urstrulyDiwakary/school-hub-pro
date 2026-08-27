@@ -221,11 +221,18 @@ export function getMobileNav(portal: Portal): { primary: NavItem[]; more: NavIte
   return { primary: flat.slice(0, 4), more: flat.slice(4) };
 }
 
-/** Resolve the active portal from the current pathname. */
-export function resolvePortalFromPath(pathname: string): Portal {
+/**
+ * Resolve the active portal from the current pathname. Shared routes
+ * (e.g. `/notices`, `/settings`) fall back to the signed-in user's role
+ * so a parent never sees the admin navigation.
+ */
+export function resolvePortalFromPath(pathname: string, role?: string): Portal {
   if (pathname === "/parent" || pathname.startsWith("/parent/")) return "parent";
   if (pathname === "/student" || pathname.startsWith("/student/")) return "student";
   if (pathname === "/teacher" || pathname.startsWith("/teacher/")) return "teacher";
+  if (role === "parent") return "parent";
+  if (role === "student") return "student";
+  if (role === "teacher") return "teacher";
   return "admin";
 }
 

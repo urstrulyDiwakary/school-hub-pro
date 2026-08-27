@@ -63,7 +63,7 @@ export function AnnouncementFeed({
         {items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">No announcements yet.</p>
         ) : (
-          <ScrollArea style={{ maxHeight }} className="pr-3">
+          <ScrollArea style={{ maxHeight }} className="w-full pr-3 [&>div>div]:!block">
             <ul className="space-y-2">
               {items.map((a) => {
                 const Meta = categoryMeta[a.category];
@@ -79,7 +79,7 @@ export function AnnouncementFeed({
                       <button
                         type="button"
                         onClick={() => open(a)}
-                        className="flex flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
+                        className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
                         aria-label={`Open ${CATEGORY_LABELS[a.category]}: ${a.title}`}
                       >
                         <span

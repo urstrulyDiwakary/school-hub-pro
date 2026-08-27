@@ -10,6 +10,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { navByPortal, resolvePortalFromPath, type NavItem } from "@/lib/navigation";
+import { useAuthStore } from "@/lib/auth";
 import { Clock, ArrowRight, Compass } from "lucide-react";
 
 const RECENT_KEY = "edutrack.recent-routes";
@@ -51,7 +52,8 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const portal = resolvePortalFromPath(location.pathname);
+  const { user } = useAuthStore();
+  const portal = resolvePortalFromPath(location.pathname, user?.role);
   const entries = useMemo(() => flatten(navByPortal[portal]), [portal]);
 
   useEffect(() => {
