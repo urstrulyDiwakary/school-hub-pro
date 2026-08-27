@@ -79,7 +79,7 @@ export function AnnouncementFeed({
                       <button
                         type="button"
                         onClick={() => open(a)}
-                        className="flex flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
+                        className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
                         aria-label={`Open ${CATEGORY_LABELS[a.category]}: ${a.title}`}
                       >
                         <span
