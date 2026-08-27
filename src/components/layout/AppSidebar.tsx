@@ -45,7 +45,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const portal = resolvePortalFromPath(location.pathname);
+  const portal = resolvePortalFromPath(location.pathname, user?.role);
   const navItems = navByPortal[portal];
   const { favs, toggle: toggleFav } = useFavorites();
 

@@ -14,9 +14,9 @@ import { getMobileNav, resolvePortalFromPath, portalTitles } from "@/lib/navigat
 
 export function BottomNavBar() {
   const location = useLocation();
-  const portal = resolvePortalFromPath(location.pathname);
-  const { primary, more } = getMobileNav(portal);
   const { user } = useAuthStore();
+  const portal = resolvePortalFromPath(location.pathname, user?.role);
+  const { primary, more } = getMobileNav(portal);
   const { unreadCount } = useAnnouncements(user?.role);
 
   const isActive = (href: string) =>
