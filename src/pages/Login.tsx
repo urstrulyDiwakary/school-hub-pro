@@ -10,7 +10,6 @@ import { ROLE_HOME, ROLE_LABELS, type Role } from "@/lib/auth/types";
 import { demoCredentialsByRole } from "@/lib/auth/mockUsers";
 
 const QUICK_ROLES: Role[] = [
-  "super_admin",
   "school_admin",
   "teacher",
   "parent",
