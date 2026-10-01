@@ -9,14 +9,6 @@ export interface MockCredential extends AuthUser {
 
 export const mockUsers: MockCredential[] = [
   {
-    id: "u-super",
-    name: "Vikram Rao",
-    email: "super@edutrack.in",
-    role: "super_admin",
-    password: "super123",
-    initials: "VR",
-  },
-  {
     id: "u-admin",
     name: "School Admin",
     email: "admin@edutrack.in",
