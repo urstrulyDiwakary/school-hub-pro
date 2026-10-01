@@ -74,6 +74,7 @@ import QuestionBank from "./pages/exam/QuestionBank";
 import HallTickets from "./pages/exam/HallTickets";
 import EvaluationCenter from "./pages/exam/EvaluationCenter";
 import ExamReports from "./pages/exam/ExamReports";
+import SupportInsights from "./pages/exam/SupportInsights";
 
 // Restore any persisted failed-job history once at module load so the panel
 // shows previous failures (with timestamps + error reasons) after a reload.
@@ -146,6 +147,7 @@ const App = () => (
               <Route path="/exams/hall-tickets" element={<HallTickets />} />
               <Route path="/exams/evaluation" element={<EvaluationCenter />} />
               <Route path="/exams/reports" element={<ExamReports />} />
+              <Route path="/exams/support-insights" element={<SupportInsights />} />
 
               {/* Academics */}
               <Route path="/academics/classes" element={<Classes />} />
