@@ -120,6 +120,7 @@ export const navByPortal: Record<Portal, NavItem[]> = {
         { title: "Report Cards", href: "/exams/report-cards" },
         { title: "Result Publishing", href: "/exams/publishing" },
         { title: "Analytics", href: "/exams/analytics" },
+        { title: "Support Insights", href: "/exams/support-insights" },
         { title: "Question Bank", href: "/exams/question-bank" },
         { title: "Hall Tickets", href: "/exams/hall-tickets" },
         { title: "Evaluation Center", href: "/exams/evaluation" },
