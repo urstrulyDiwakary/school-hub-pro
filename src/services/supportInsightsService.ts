@@ -48,7 +48,11 @@ export interface AnalyzeResponse {
   interventions: ClassIntervention[];
 }
 
-export const SUPPORT_INSIGHTS_ENDPOINT = import.meta.env.VITE_SUPPORT_INSIGHTS_ENDPOINT as string | undefined;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+export const SUPPORT_INSIGHTS_ENDPOINT =
+  (import.meta.env.VITE_SUPPORT_INSIGHTS_ENDPOINT as string | undefined) ??
+  (SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/support-insights` : undefined);
 
 const pct = (m: number, max: number) => (max > 0 ? (m / max) * 100 : 0);
 
@@ -150,7 +154,10 @@ export const supportInsightsService = {
     }
     const res = await fetch(SUPPORT_INSIGHTS_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(SUPABASE_KEY ? { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } : {}),
+      },
       body: JSON.stringify(req),
     });
     if (!res.ok) {
