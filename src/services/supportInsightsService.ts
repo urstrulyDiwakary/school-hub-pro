@@ -162,7 +162,8 @@ export const supportInsightsService = {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      if (res.status === 402) throw new Error(body.message ?? "AI credits are exhausted. Please top up to continue.");
+      // Own AI service not connected yet: use the built-in rules.
+      if (res.status === 503 && body.error === "not_configured") return analyzeLocally(req);
       if (res.status === 429) throw new Error("Too many requests right now. Please try again in a minute.");
       throw new Error(body.message ?? body.error ?? `Analysis failed (${res.status}).`);
     }
