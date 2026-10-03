@@ -19,7 +19,7 @@ export function DashboardLayout() {
         <AppHeader onMenuClick={() => setSidebarOpen(true)} />
         <AnnouncementBanner />
 
-        <main className="flex-1 overflow-y-auto p-4 pb-20 lg:p-6 lg:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 pb-20 md:pb-4 lg:p-6 lg:pb-6">
           <AnnouncementBannerBoundary>
             <Outlet />
           </AnnouncementBannerBoundary>
