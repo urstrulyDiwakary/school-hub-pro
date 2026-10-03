@@ -181,7 +181,7 @@ export default function SupportInsights() {
                 <div>
                   <p className="text-sm font-medium">{result.summary}</p>
                   <p className="text-xs text-muted-foreground">
-                    Source: {result.source === "ai" ? "AI analysis" : "Rule-based analyzer"} · Suggestions are a starting point; use teacher judgement.
+                    Source: {result.source === "ai" ? "Your AI service" : "Built-in rules (your AI service isn't connected yet)"} · Suggestions are a starting point; use teacher judgement.
                   </p>
                 </div>
               </CardContent>
