@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, Eye, EyeOff, Building2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/lib/auth";
 import { ROLE_HOME, ROLE_LABELS, type Role } from "@/lib/auth/types";
 import { demoCredentialsByRole } from "@/lib/auth/mockUsers";
+import { loadLiveUser } from "@/lib/auth/liveAuth";
+import { redeemPendingCode } from "@/services/schoolService";
+import { supabase } from "@/integrations/supabase/client";
 
 const QUICK_ROLES: Role[] = [
   "school_admin",
@@ -21,6 +24,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const login = useAuthStore((s) => s.login);
+  const setUser = useAuthStore((s) => s.setUser);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,18 +35,36 @@ export default function Login() {
 
   const completeLogin = async (email: string, password: string) => {
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
     const user = login(email, password);
     if (user) {
-      toast({ title: "Welcome back!", description: `Signed in as ${ROLE_LABELS[user.role]}.` });
+      toast({ title: "Welcome back!", description: `Signed in as ${ROLE_LABELS[user.role]} (sample data).` });
       navigate(ROLE_HOME[user.role], { replace: true });
-    } else {
+      setIsLoading(false);
+      return;
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error || !data.session) {
       toast({
         title: "Login failed",
-        description: "Invalid email or password. Try a demo account below.",
+        description: error?.message === "Email not confirmed"
+          ? "Please confirm your email first — check your inbox."
+          : "Invalid email or password.",
         variant: "destructive",
       });
+      setIsLoading(false);
+      return;
     }
+    const live = await loadLiveUser(data.session);
+    if (!live) {
+      toast({ title: "Account not set up", description: "Ask the school office to finish your account.", variant: "destructive" });
+      await supabase.auth.signOut();
+      setIsLoading(false);
+      return;
+    }
+    setUser(live);
+    if (live.role === "parent") await redeemPendingCode();
+    toast({ title: "Welcome back!", description: `Signed in as ${ROLE_LABELS[live.role]}.` });
+    navigate(ROLE_HOME[live.role], { replace: true });
     setIsLoading(false);
   };
 
@@ -186,9 +208,20 @@ export default function Login() {
             </Button>
           </form>
 
+          <div className="space-y-1 text-center text-sm text-muted-foreground">
+            <p>
+              Parent?{" "}
+              <Link to="/signup" className="font-medium text-primary hover:underline">Create a parent account</Link>
+            </p>
+            <p>
+              Setting up your school?{" "}
+              <Link to="/signup?setup=admin" className="font-medium text-primary hover:underline">Create the admin account</Link>
+            </p>
+          </div>
+
           {/* Quick demo role login */}
           <div className="rounded-lg border bg-muted/50 p-4">
-            <p className="mb-3 text-sm font-medium text-foreground">Quick demo login</p>
+            <p className="mb-3 text-sm font-medium text-foreground">Explore with sample data</p>
             <div className="grid grid-cols-2 gap-2">
               {QUICK_ROLES.map((role) => (
                 <Button
