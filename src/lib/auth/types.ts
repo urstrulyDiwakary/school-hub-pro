@@ -19,6 +19,8 @@ export interface AuthUser {
   initials?: string;
   /** Linked child/student ids (for parents) or own student id (for students). */
   studentIds?: string[];
+  /** True for real accounts; false/undefined for demo accounts. */
+  live?: boolean;
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
