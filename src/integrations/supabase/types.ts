@@ -14,16 +14,369 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          audiences: string[]
+          category: string
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          created_by_name: string
+          effective_date: string | null
+          id: string
+          message: string
+          pinned: boolean
+          title: string
+        }
+        Insert: {
+          audiences?: string[]
+          category?: string
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          effective_date?: string | null
+          id?: string
+          message: string
+          pinned?: boolean
+          title: string
+        }
+        Update: {
+          audiences?: string[]
+          category?: string
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          effective_date?: string | null
+          id?: string
+          message?: string
+          pinned?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      attendance_records: {
+        Row: {
+          date: string
+          id: string
+          marked_by: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          date: string
+          id?: string
+          marked_by?: string | null
+          status: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          marked_by?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_results: {
+        Row: {
+          class_rank: number | null
+          created_at: string
+          created_by: string | null
+          exam_date: string
+          exam_name: string
+          id: string
+          student_id: string
+          subjects: Json
+          term: string
+          total_students: number | null
+        }
+        Insert: {
+          class_rank?: number | null
+          created_at?: string
+          created_by?: string | null
+          exam_date?: string
+          exam_name: string
+          id?: string
+          student_id: string
+          subjects?: Json
+          term?: string
+          total_students?: number | null
+        }
+        Update: {
+          class_rank?: number | null
+          created_at?: string
+          created_by?: string | null
+          exam_date?: string
+          exam_name?: string
+          id?: string
+          student_id?: string
+          subjects?: Json
+          term?: string
+          total_students?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_threads: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          parent_name: string
+          recipient: string
+          status: string
+          student_id: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          parent_name?: string
+          recipient: string
+          status?: string
+          student_id?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          parent_name?: string
+          recipient?: string
+          status?: string
+          student_id?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_threads_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_students: {
+        Row: {
+          created_at: string
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      student_join_codes: {
+        Row: {
+          code: string
+          created_at: string
+          student_id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          student_id: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          student_id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_join_codes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          class_name: string
+          class_teacher: string
+          created_at: string
+          full_name: string
+          id: string
+          roll_no: number | null
+          section: string
+        }
+        Insert: {
+          class_name: string
+          class_teacher?: string
+          created_at?: string
+          full_name: string
+          id?: string
+          roll_no?: number | null
+          section?: string
+        }
+        Update: {
+          class_name?: string
+          class_teacher?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          roll_no?: number | null
+          section?: string
+        }
+        Relationships: []
+      }
+      thread_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_name: string
+          sender_role: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_name?: string
+          sender_role?: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_name?: string
+          sender_role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_thread: {
+        Args: { _thread_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_handle_thread: {
+        Args: { _recipient: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_parent_of: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
+      redeem_join_code: { Args: { _code: string }; Returns: string }
+      school_has_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "school_admin" | "teacher" | "accountant" | "parent" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +503,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["school_admin", "teacher", "accountant", "parent", "student"],
+    },
   },
 } as const
