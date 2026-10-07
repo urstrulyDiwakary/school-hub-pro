@@ -4,14 +4,20 @@ import { StatCard } from "@/components/portal/StatCard";
 import { ResultsProgressChart, SubjectMarksChart } from "@/components/portal/PortalCharts";
 import { resultsService } from "@/services/resultsService";
 import { cn } from "@/lib/utils";
+import { isUuid } from "@/services/schoolService";
+import { useLiveResults, useRealtimeInvalidate } from "@/hooks/useLiveSchool";
 
 export function ResultsView({ studentId }: { studentId: string }) {
-  const all = resultsService.getAll(studentId);
-  const latest = resultsService.getLatest(studentId);
-  const trend = resultsService.getProgressTrend(studentId);
-  const subjectData = resultsService.getSubjectBreakdown(studentId);
-  const avg = resultsService.getAveragePercentage(studentId);
+  const live = isUuid(studentId);
+  const q = useLiveResults(studentId, live);
+  useRealtimeInvalidate(["exam_results"], [["live-results", studentId]], live);
+  const all = live ? q.data ?? [] : resultsService.getAll(studentId);
+  const latest = all.at(-1);
+  const trend = all.map((r) => ({ exam: r.examName, percentage: r.percentage, rank: r.rank }));
+  const subjectData = latest ? latest.subjects.map((s) => ({ subject: s.subject, marks: s.marks, maxMarks: s.maxMarks })) : [];
+  const avg = all.length ? Math.round((all.reduce((s, r) => s + r.percentage, 0) / all.length) * 10) / 10 : 0;
 
+  if (live && q.isLoading) return <p className="text-sm text-muted-foreground">Loading results…</p>;
   if (!latest) return <p className="text-sm text-muted-foreground">No results available yet.</p>;
 
   return (
