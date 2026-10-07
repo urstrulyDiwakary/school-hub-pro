@@ -5,7 +5,9 @@ import {
   AttendancePieChart,
   AttendanceTrendChart,
 } from "@/components/portal/PortalCharts";
-import { attendanceService } from "@/services/attendanceService";
+import { attendanceService, fromRecords } from "@/services/attendanceService";
+import { isUuid } from "@/services/schoolService";
+import { useLiveAttendance, useRealtimeInvalidate } from "@/hooks/useLiveSchool";
 import type { AttendanceStatus } from "@/data/portal/attendance";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +27,18 @@ function formatDate(iso: string) {
 }
 
 export function AttendanceView({ studentId }: { studentId: string }) {
-  const summary = attendanceService.getSummary(studentId);
-  const trend = attendanceService.getMonthlyTrend(studentId);
-  const distribution = attendanceService.getDistribution(studentId);
-  const recent = attendanceService.getRecent(studentId, 14);
-  const absences = attendanceService.getAbsentAlerts(studentId, 5);
+  const live = isUuid(studentId);
+  const q = useLiveAttendance(studentId, live);
+  useRealtimeInvalidate(["attendance_records"], [["live-attendance", studentId]], live);
+  const a = fromRecords(live ? q.data ?? [] : attendanceService.getRecords(studentId));
+  const summary = a.summary;
+  const trend = a.monthlyTrend();
+  const distribution = a.distribution();
+  const recent = a.recent(14);
+  const absences = a.absences(5);
+
+  if (live && q.isLoading) return <p className="text-sm text-muted-foreground">Loading attendance…</p>;
+  if (live && summary.total === 0) return <p className="text-sm text-muted-foreground">No attendance has been recorded yet.</p>;
 
   return (
     <div className="space-y-6">
