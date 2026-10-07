@@ -5,7 +5,11 @@
 // helpers for API calls when a backend is connected.
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Role } from "@/lib/auth/types";
+import { useAuthStore } from "@/lib/auth/authStore";
+import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeInvalidate } from "@/hooks/useLiveSchool";
 
 export type AnnouncementCategory = "holiday" | "alert" | "event" | "notice" | "exam";
 export type AnnouncementAudience = "all" | "teachers" | "parents" | "students" | "staff";
@@ -119,6 +123,15 @@ export const announcementStore = {
     });
   },
   publish(input: Omit<Announcement, "id" | "createdAt">): Announcement {
+    const liveUser = useAuthStore.getState().user;
+    if (liveUser?.live) {
+      void supabase.from("announcements").insert({
+        category: input.category, title: input.title, message: input.message,
+        audiences: input.audiences, channels: input.channels, pinned: !!input.pinned,
+        effective_date: input.effectiveDate ?? null, created_by: liveUser.id, created_by_name: input.createdBy,
+      }).then(() => window.dispatchEvent(new Event(EVENT)));
+      return { ...input, id: "pending", createdAt: new Date().toISOString() };
+    }
     const item: Announcement = {
       ...input,
       id: `ANN-${Date.now()}`,
@@ -128,6 +141,10 @@ export const announcementStore = {
     return item;
   },
   remove(id: string) {
+    if (useAuthStore.getState().user?.live) {
+      void supabase.from("announcements").delete().eq("id", id).then(() => window.dispatchEvent(new Event(EVENT)));
+      return;
+    }
     write(read().filter((a) => a.id !== id));
   },
   readIds: readRead,
@@ -185,9 +202,30 @@ export function useAnnouncements(role?: Role) {
   const [tick, setTick] = useState(0);
   useEffect(() => announcementStore.subscribe(() => setTick((t) => t + 1)), []);
 
+  const isLive = !!useAuthStore((s) => s.user?.live);
+  const liveQ = useQuery({
+    queryKey: ["live-announcements"],
+    enabled: isLive,
+    queryFn: async (): Promise<Announcement[]> => {
+      const { data, error } = await supabase.from("announcements").select("*")
+        .order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100);
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        id: r.id, category: r.category as AnnouncementCategory, title: r.title, message: r.message,
+        audiences: r.audiences as AnnouncementAudience[], channels: r.channels as AnnouncementChannel[],
+        createdAt: r.created_at, createdBy: r.created_by_name, pinned: r.pinned,
+        effectiveDate: r.effective_date ?? undefined,
+      }));
+    },
+  });
+  useRealtimeInvalidate(["announcements"], [["live-announcements"]], isLive);
+  useEffect(() => {
+    if (isLive) void liveQ.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
+
   const buckets = audiencesForRole(role);
-  const items = announcementStore
-    .list()
+  const items = (isLive ? liveQ.data ?? [] : announcementStore.list())
     .filter((a) => a.audiences.some((aud) => buckets.includes(aud)));
   const readIds = announcementStore.readIds();
   const unread = items.filter((a) => !readIds.includes(a.id));
@@ -198,7 +236,11 @@ export function useAnnouncements(role?: Role) {
     unreadCount: unread.length,
     isRead: (id: string) => readIds.includes(id),
     markRead: announcementStore.markRead,
-    markAllRead: announcementStore.markAllRead,
+    markAllRead: () => {
+      const ids = new Set([...readIds, ...items.map((a) => a.id)]);
+      try { localStorage.setItem(READ_KEY, JSON.stringify([...ids])); } catch { /* ignore */ }
+      window.dispatchEvent(new Event(EVENT));
+    },
     remove: announcementStore.remove,
     publish: announcementStore.publish,
     /** changes on every store mutation — useful as a render key */
