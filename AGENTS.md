@@ -1,0 +1,2 @@
+- Real accounts (Lovable Cloud auth) and demo accounts share `useAuthStore`; real users carry `live: true` and read/write cloud tables, demo users keep sample data. Why: sample exploration keeps working while real school data stays private behind RLS.
+- Roles live only in `public.user_roles`; public sign-up always becomes `parent` (first account may claim `school_admin`), staff are created by the `manage-staff` function. Why: prevents self-assigned privileges.
