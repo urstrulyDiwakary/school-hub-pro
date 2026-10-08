@@ -129,6 +129,8 @@ export const navByPortal: Record<Portal, NavItem[]> = {
     },
     { title: "Attendance", icon: Calendar, href: "/attendance" },
     { title: "Communication", icon: Bell, href: "/communication" },
+    { title: "Parent Messages", icon: MessageSquare, href: "/inbox" },
+    { title: "Live Records", icon: ClipboardCheck, href: "/records" },
     { title: "Reports", icon: BarChart3, href: "/reports" },
     { title: "Settings", icon: Settings, href: "/settings" },
   ],
@@ -141,6 +143,8 @@ export const navByPortal: Record<Portal, NavItem[]> = {
     { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
     { title: "Attendance History", icon: Clock, href: "/teacher/attendance/history" },
     { title: "My Payslip", icon: Wallet, href: "/teacher/payslip" },
+    { title: "Parent Messages", icon: MessageSquare, href: "/inbox" },
+    { title: "Live Records", icon: ClipboardCheck, href: "/records" },
   ],
 
   parent: [

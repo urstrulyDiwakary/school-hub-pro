@@ -6,7 +6,9 @@ import { PortalPage } from "@/components/portal/PortalPage";
 import { StatCard } from "@/components/portal/StatCard";
 import { ChildSwitcher } from "@/components/portal/ChildSwitcher";
 import { useActiveStudent } from "@/hooks/useActiveStudent";
-import { attendanceService } from "@/services/attendanceService";
+import { attendanceService, fromRecords } from "@/services/attendanceService";
+import { useLiveAttendance, useLiveResults } from "@/hooks/useLiveSchool";
+import { LinkChildCard } from "@/components/portal/LinkChildCard";
 import { feeService, formatINR } from "@/services/feeService";
 import { resultsService } from "@/services/resultsService";
 import { getHomeworkByStudent } from "@/data/portal/homework";
@@ -14,12 +16,21 @@ import { notificationService } from "@/services/notificationService";
 import { upcomingExams } from "@/data/portal/academics";
 
 export default function ParentDashboard() {
-  const { student } = useActiveStudent();
-  if (!student) return <PortalPage title="Parent Dashboard"><p>No child linked to this account.</p></PortalPage>;
+  const { student, isLive, isLoading } = useActiveStudent();
+  const liveAtt = useLiveAttendance(student?.id, isLive);
+  const liveRes = useLiveResults(student?.id, isLive);
+  if (isLive && isLoading) return <PortalPage title="Parent Dashboard"><p className="text-sm text-muted-foreground">Loading…</p></PortalPage>;
+  if (!student)
+    return (
+      <PortalPage title="Parent Dashboard">
+        <p className="mb-4 text-sm text-muted-foreground">No child is linked to this account yet. Enter the code the school gave you.</p>
+        {isLive && <LinkChildCard />}
+      </PortalPage>
+    );
 
-  const att = attendanceService.getSummary(student.id);
+  const att = isLive ? fromRecords(liveAtt.data ?? []).summary : attendanceService.getSummary(student.id);
   const fees = feeService.getSummary(student.id);
-  const latest = resultsService.getLatest(student.id);
+  const latest = isLive ? liveRes.data?.at(-1) : resultsService.getLatest(student.id);
   const homework = getHomeworkByStudent(student.id);
   const pendingHw = homework.filter((h) => h.status === "pending" || h.status === "overdue").length;
   const notifications = notificationService.getForAudience("parent").slice(0, 4);
@@ -30,6 +41,7 @@ export default function ParentDashboard() {
       description={`${student.academic.className} - ${student.academic.section} · ${student.academic.classTeacher}`}
       actions={<ChildSwitcher />}
     >
+      {isLive && <LinkChildCard />}
       <div className="responsive-grid-4">
         <StatCard label="Attendance" value={`${att.percentage}%`} icon={CalendarCheck} tone="primary" />
         <StatCard label="Pending Fees" value={formatINR(fees.pending + fees.overdue)} icon={CreditCard} tone="warning" />
