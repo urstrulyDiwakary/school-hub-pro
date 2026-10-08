@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import StaffInbox from "./pages/StaffInbox";
+import SchoolRecords from "./pages/SchoolRecords";
+import { AuthBridge } from "./lib/auth/liveAuth";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import AddStudent from "./pages/AddStudent";
@@ -98,10 +102,12 @@ const App = () => (
         <BrowserRouter>
           <ExportJobsPanel />
           <CommandPalette />
+          <AuthBridge />
           <Routes>
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected routes — guarded by role-based permission matrix */}
@@ -160,6 +166,8 @@ const App = () => (
               {/* Communication */}
               <Route path="/communication" element={<Communication />} />
               <Route path="/notices" element={<Notices />} />
+              <Route path="/inbox" element={<StaffInbox />} />
+              <Route path="/records" element={<SchoolRecords />} />
 
               {/* Reports */}
               <Route path="/reports" element={<Reports />} />
