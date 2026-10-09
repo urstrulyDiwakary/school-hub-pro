@@ -2,6 +2,16 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { ThreadsPanel, useThreads } from "@/components/messages/MessageThreads";
 import { useAuthStore } from "@/lib/auth";
 
+export function StaffInboxContent() {
+  const user = useAuthStore((s) => s.user);
+  const q = useThreads();
+  if (!user?.live)
+    return <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+      The parent inbox needs a real staff account. Sign in with the account your school admin created for you.</p>;
+  if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading messages…</p>;
+  return <ThreadsPanel threads={q.data ?? []} emptyText="No parent messages yet." staffView />;
+}
+
 export default function StaffInbox() {
   const user = useAuthStore((s) => s.user);
   const q = useThreads();

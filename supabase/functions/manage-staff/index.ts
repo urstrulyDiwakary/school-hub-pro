@@ -10,7 +10,8 @@ const Body = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(72),
   fullName: z.string().trim().min(1).max(100),
-  role: z.enum(["teacher", "accountant", "school_admin"]),
+  role: z.enum(["teacher", "accountant", "school_admin", "student"]),
+  studentIds: z.array(z.string().uuid()).max(10).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -30,7 +31,8 @@ Deno.serve(async (req) => {
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return json({ error: "Check the name, email and password (8+ characters)." }, 400);
-  const { email, password, fullName, role } = parsed.data;
+  const { email, password, fullName, role, studentIds } = parsed.data;
+  if (role === "student" && !studentIds?.length) return json({ error: "Pick the student record(s) for this login." }, 400);
 
   const { data, error } = await admin.auth.admin.createUser({
     email,
@@ -40,5 +42,10 @@ Deno.serve(async (req) => {
     app_metadata: { staff_role: role },
   });
   if (error) return json({ error: error.message }, 400);
+  if (role === "student" && data.user) {
+    const { error: lErr } = await admin.from("parent_students")
+      .insert(studentIds!.map((sid) => ({ parent_id: data.user!.id, student_id: sid })));
+    if (lErr) return json({ error: lErr.message }, 400);
+  }
   return json({ id: data.user?.id, email });
 });

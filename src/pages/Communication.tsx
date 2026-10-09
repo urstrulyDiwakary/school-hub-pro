@@ -45,6 +45,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { StaffInboxContent } from "@/pages/StaffInbox";
 
 const announcements = [
   {
@@ -289,6 +290,7 @@ export default function Communication() {
               </TabsTrigger>
               <TabsTrigger value="notices" className="text-xs sm:text-sm px-3 sm:px-4">Notices</TabsTrigger>
               <TabsTrigger value="alerts" className="text-xs sm:text-sm px-3 sm:px-4">Alerts</TabsTrigger>
+              <TabsTrigger value="inbox" className="text-xs sm:text-sm px-3 sm:px-4">Parent messages</TabsTrigger>
             </TabsList>
           </div>
           <div className="relative w-full sm:w-64">
@@ -390,6 +392,10 @@ export default function Communication() {
             <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground" />
             <p className="mt-4 text-muted-foreground">Filter by alerts</p>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="inbox">
+          <StaffInboxContent />
         </TabsContent>
       </Tabs>
     </div>

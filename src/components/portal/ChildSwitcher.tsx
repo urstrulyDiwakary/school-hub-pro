@@ -8,12 +8,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-/** Lets a parent switch between their children. Hidden for single-child accounts. */
+/** Lets a parent (or a student login linked to siblings) switch between children. Hidden for single-child accounts. */
 export function ChildSwitcher() {
-  const { student, children, isParent } = useActiveStudent();
+  const { student, children } = useActiveStudent();
   const setSelectedStudent = usePortalStore((s) => s.setSelectedStudent);
 
-  if (!isParent || children.length < 2) return null;
+  if (children.length < 2) return null;
 
   return (
     <Select value={student?.id} onValueChange={setSelectedStudent}>
