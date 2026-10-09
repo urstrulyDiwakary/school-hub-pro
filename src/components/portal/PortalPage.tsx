@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import { ChildSwitcher } from "@/components/portal/ChildSwitcher";
+import { useAuthStore } from "@/lib/auth";
 import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 interface PortalPageProps {
@@ -9,7 +11,10 @@ interface PortalPageProps {
 }
 
 /** Consistent page shell used across the parent & student portals. */
-export function PortalPage({ title, description, actions, children }: PortalPageProps) {
+export function PortalPage({ title, description, actions: extra, children }: PortalPageProps) {
+  // Parent pages place their own switcher; student pages get it automatically.
+  const isStudent = useAuthStore((s) => s.user?.role === "student");
+  const actions = isStudent ? <>{extra}<ChildSwitcher /></> : extra;
   return (
     <div className="space-y-6 animate-fade-in">
       {/* No-ops when the app shell already renders the ticker above. */}

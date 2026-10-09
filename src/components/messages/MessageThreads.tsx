@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Reply, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthStore } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/auth/types";
@@ -40,6 +40,12 @@ function ThreadMessages({ thread }: { thread: Thread }) {
   const qc = useQueryClient();
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
+  const replyTo = (m: { sender_name: string; body: string }) => {
+    const quote = m.body.length > 120 ? `${m.body.slice(0, 120)}…` : m.body;
+    setReply(`> ${m.sender_name}: ${quote.replace(/\n/g, " ")}\n\n`);
+    requestAnimationFrame(() => boxRef.current?.focus());
+  };
   useRealtimeInvalidate(["thread_messages"], [["thread", thread.id]]);
   const q = useQuery({
     queryKey: ["thread", thread.id],
@@ -75,12 +81,18 @@ function ThreadMessages({ thread }: { thread: Thread }) {
             <div key={m.id} className={cn("max-w-[85%] rounded-lg border p-3", mine ? "ml-auto bg-primary/10" : "bg-muted/40")}>
               <p className="text-xs text-muted-foreground">{m.sender_name} · {m.sender_role} · {fmt(m.created_at)}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{m.body}</p>
+              {!mine && (
+                <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 gap-1 px-2 text-xs"
+                  aria-label={`Reply to ${m.sender_name}`} onClick={() => replyTo(m)}>
+                  <Reply className="h-3.5 w-3.5" /> Reply
+                </Button>
+              )}
             </div>
           );
         })}
       </div>
       <form onSubmit={send} className="space-y-2">
-        <Textarea aria-label="Reply" rows={3} maxLength={2000} placeholder="Write a reply…" value={reply} onChange={(e) => setReply(e.target.value)} />
+        <Textarea ref={boxRef} aria-label="Reply" rows={3} maxLength={2000} placeholder="Write a reply…" value={reply} onChange={(e) => setReply(e.target.value)} />
         <Button type="submit" size="sm" className="gap-1" disabled={busy || !reply.trim()}>
           <Send className="h-4 w-4" /> Reply
         </Button>

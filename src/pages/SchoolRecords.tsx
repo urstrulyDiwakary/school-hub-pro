@@ -235,16 +235,19 @@ function MarksTab() {
 
 function StaffTab() {
   const [f, setF] = useState({ fullName: "", email: "", password: "", role: "teacher" });
+  const [picked, setPicked] = useState<string[]>([]);
+  const studentsQ = useLiveStudents(f.role === "student");
   const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("manage-staff", { body: f });
+    const { data, error } = await supabase.functions.invoke("manage-staff", { body: f.role === "student" ? { ...f, studentIds: picked } : f });
     setBusy(false);
     const msg = (data as { error?: string } | null)?.error ?? error?.message;
     if (msg) return toast({ title: "Could not add staff", description: msg, variant: "destructive" });
     toast({ title: "Staff account created", description: `Share the email and password with ${f.fullName}.` });
     setF({ fullName: "", email: "", password: "", role: f.role });
+    setPicked([]);
   };
   return (
     <Card>
@@ -256,7 +259,22 @@ function StaffTab() {
           <div className="space-y-1"><Label htmlFor="sf-p">Starting password</Label><Input id="sf-p" type="text" minLength={8} required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
           <div className="space-y-1"><Label>Role</Label>
             <Select value={f.role} onValueChange={(role) => setF({ ...f, role })}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="accountant">Accounts office</SelectItem><SelectItem value="school_admin">School admin</SelectItem></SelectContent></Select></div>
+              <SelectContent><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="accountant">Accounts office</SelectItem><SelectItem value="school_admin">School admin</SelectItem><SelectItem value="student">Student</SelectItem></SelectContent></Select></div>
+          {f.role === "student" && (
+            <fieldset className="space-y-1 sm:col-span-2">
+              <legend className="text-sm font-medium">Student record(s) this login can see</legend>
+              <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto rounded-md border p-2">
+                {(studentsQ.data ?? []).map((s) => (
+                  <label key={s.id} className="flex items-center gap-1.5 text-sm">
+                    <input type="checkbox" checked={picked.includes(s.id)}
+                      onChange={(e) => setPicked(e.target.checked ? [...picked, s.id] : picked.filter((x) => x !== s.id))} />
+                    {s.full_name} ({s.class_name}-{s.section})
+                  </label>
+                ))}
+                {!studentsQ.data?.length && <span className="text-sm text-muted-foreground">Add students first.</span>}
+              </div>
+            </fieldset>
+          )}
           <div><Button type="submit" className="gap-1" disabled={busy}><UserPlus className="h-4 w-4" /> {busy ? "Creating…" : "Create login"}</Button></div>
         </form>
       </CardContent>

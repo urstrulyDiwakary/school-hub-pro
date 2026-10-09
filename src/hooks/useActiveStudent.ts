@@ -21,7 +21,7 @@ export function useActiveStudent(): {
   const user = useAuthStore((s) => s.user);
   const selectedStudentId = usePortalStore((s) => s.selectedStudentId);
   const isLive = !!user?.live;
-  const live = useLiveStudents(isLive && user?.role === "parent");
+  const live = useLiveStudents(isLive && (user?.role === "parent" || user?.role === "student"));
 
   return useMemo(() => {
     if (!user) return { student: undefined, children: [], isParent: false, isLive, isLoading: false };
@@ -40,6 +40,11 @@ export function useActiveStudent(): {
       return { student: active, children, isParent: true, isLive, isLoading: isLive && live.isLoading };
     }
 
+    if (isLive) {
+      const children = (live.data ?? []).map(toPortalStudent);
+      const active = children.find((c) => c.id === selectedStudentId) ?? children[0];
+      return { student: active, children, isParent: false, isLive, isLoading: live.isLoading };
+    }
     const id = user.studentIds?.[0] ?? "STU001";
     const student = getStudentById(id);
     return { student, children: student ? [student] : [], isParent: false, isLive, isLoading: false };
