@@ -25,12 +25,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const toneIcon: Record<StaffTodo["tone"], React.ComponentType<{ className?: string }>> = {
+const toneIcon: Record<StaffTodo["id"], React.ComponentType<{ className?: string }>> = {
   attendance: CalendarCheck,
   marks: ClipboardList,
   notices: Megaphone,
   messages: MessageSquare,
-} as never;
+};
 
 const toneClasses: Record<StaffTodo["tone"], string> = {
   warning: "bg-warning/10 text-warning",
