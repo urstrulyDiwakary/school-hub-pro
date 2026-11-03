@@ -10,6 +10,7 @@ import StaffInbox from "./pages/StaffInbox";
 import SchoolRecords from "./pages/SchoolRecords";
 import { AuthBridge } from "./lib/auth/liveAuth";
 import Dashboard from "./pages/Dashboard";
+import StaffDashboard from "./pages/staff/StaffDashboard";
 import Students from "./pages/Students";
 import AddStudent from "./pages/AddStudent";
 import StudentProfile from "./pages/StudentProfile";
@@ -114,6 +115,7 @@ const App = () => (
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/staff/dashboard" element={<StaffDashboard />} />
 
               {/* Students */}
               <Route path="/students" element={<Students />} />

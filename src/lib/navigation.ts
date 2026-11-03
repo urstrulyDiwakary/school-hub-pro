@@ -138,7 +138,7 @@ export const navByPortal: Record<Portal, NavItem[]> = {
   ],
 
   teacher: [
-    { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
+    { title: "Staff To-do", icon: ListTodo, href: "/staff/dashboard" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks Entry", icon: ClipboardCheck, href: "/teacher/marks" },
     { title: "Student Remarks", icon: MessageSquare, href: "/teacher/remarks" },
@@ -190,8 +190,7 @@ const mobileNav: Record<Portal, NavItem[]> = {
     { title: "Settings", icon: Settings, href: "/settings" },
   ],
   teacher: [
-    { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
-    { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
+    { title: "To-do", icon: ListTodo, href: "/staff/dashboard" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks", icon: ClipboardCheck, href: "/teacher/marks" },
     { title: "Remarks", icon: MessageSquare, href: "/teacher/remarks" },
