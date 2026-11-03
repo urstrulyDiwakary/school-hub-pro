@@ -61,8 +61,8 @@ export const permissionMatrix: Record<Role, Permission[]> = {
 export const allowedRoutePrefixes: Record<Role, string[]> = {
   super_admin: ["/"],
   school_admin: ["/"],
-  teacher: ["/teacher", "/exams", "/settings", "/notices", "/inbox", "/communication", "/records"],
-  accountant: ["/fees", "/reports", "/dashboard", "/settings", "/notices", "/inbox", "/communication"],
+  teacher: ["/teacher", "/staff", "/exams", "/settings", "/notices", "/inbox", "/communication", "/records"],
+  accountant: ["/fees", "/reports", "/dashboard", "/staff", "/settings", "/notices", "/inbox", "/communication"],
   parent: ["/parent", "/notices"],
   student: ["/student", "/notices"],
 };
