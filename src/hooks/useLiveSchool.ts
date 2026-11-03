@@ -19,6 +19,9 @@ export function toPortalStudent(r: StudentRow): Student {
 }
 
 export function useLiveStudents(enabled = true) {
+  // A newly redeemed child code (parent_students insert) or an added student
+  // should appear without a manual refresh.
+  useRealtimeInvalidate(["students", "parent_students"], [["live-students"]], enabled);
   return useQuery({
     queryKey: ["live-students"],
     enabled,

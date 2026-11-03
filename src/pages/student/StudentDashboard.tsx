@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarCheck, BookOpen, Trophy, Clock, ChevronRight, Bell, Megaphone } from "lucide-react";
+import { CalendarCheck, BookOpen, Trophy, Clock, ChevronRight, Bell, Megaphone, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PortalPage } from "@/components/portal/PortalPage";
@@ -109,7 +109,7 @@ export default function StudentDashboard() {
         <StatCard label="Attendance" value={`${att.percentage}%`} icon={CalendarCheck} tone="primary" />
         <StatCard label="Pending Homework" value={pendingHw} icon={BookOpen} tone="info" />
         <StatCard label="Latest Result" value={latest ? `${latest.percentage}%` : "—"} icon={Trophy} tone="success" />
-        <StatCard label="Fees Due" value={formatINR(fees.pending + fees.overdue)} icon={Bell} tone="warning" />
+        <StatCard label="Fees Due" value={formatINR(fees.pending + fees.overdue)} icon={Receipt} tone="warning" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

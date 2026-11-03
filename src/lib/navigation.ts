@@ -3,6 +3,7 @@
 
 import {
   LayoutDashboard,
+  ListTodo,
   Users,
   GraduationCap,
   UserCheck,
@@ -43,6 +44,7 @@ export interface NavItem {
 export const navByPortal: Record<Portal, NavItem[]> = {
   admin: [
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { title: "Staff To-do", icon: ListTodo, href: "/staff/dashboard" },
     {
       title: "Teacher Panel",
       icon: GraduationCap,
@@ -136,7 +138,7 @@ export const navByPortal: Record<Portal, NavItem[]> = {
   ],
 
   teacher: [
-    { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
+    { title: "Staff To-do", icon: ListTodo, href: "/staff/dashboard" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks Entry", icon: ClipboardCheck, href: "/teacher/marks" },
     { title: "Student Remarks", icon: MessageSquare, href: "/teacher/remarks" },
@@ -188,11 +190,10 @@ const mobileNav: Record<Portal, NavItem[]> = {
     { title: "Settings", icon: Settings, href: "/settings" },
   ],
   teacher: [
-    { title: "Dashboard", icon: LayoutDashboard, href: "/teacher/dashboard" },
+    { title: "Dashboard", icon: LayoutDashboard, href: "/staff/dashboard" },
     { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks", icon: ClipboardCheck, href: "/teacher/marks" },
-    { title: "Remarks", icon: MessageSquare, href: "/teacher/remarks" },
     { title: "History", icon: Clock, href: "/teacher/attendance/history" },
     { title: "Payslip", icon: Wallet, href: "/teacher/payslip" },
     { title: "Settings", icon: Settings, href: "/settings" },
