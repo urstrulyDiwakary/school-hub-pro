@@ -3,6 +3,7 @@
 
 import {
   LayoutDashboard,
+  ListTodo,
   Users,
   GraduationCap,
   UserCheck,
@@ -43,6 +44,7 @@ export interface NavItem {
 export const navByPortal: Record<Portal, NavItem[]> = {
   admin: [
     { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { title: "Staff To-do", icon: ListTodo, href: "/staff/dashboard" },
     {
       title: "Teacher Panel",
       icon: GraduationCap,

@@ -6,6 +6,7 @@ import { ChildSwitcher } from "@/components/portal/ChildSwitcher";
 import { NotificationsView } from "@/components/portal/features/NotificationsView";
 import { AnnouncementFeed } from "@/components/announcements/AnnouncementFeed";
 import { ThreadsPanel, useThreads } from "@/components/messages/MessageThreads";
+import { LiveRepliesInbox } from "@/components/messages/LiveRepliesInbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function ParentCommunication() {
   const demo = useParentMessages();
   const threads = useThreads();
   const qc = useQueryClient();
+  const [tab, setTab] = useState("announcements");
   const [to, setTo] = useState<string>("class_teacher");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -65,14 +67,16 @@ export default function ParentCommunication() {
 
   return (
     <PortalPage title="Communication" description="Announcements from school and conversations with staff" actions={<ChildSwitcher />}>
-      <Tabs defaultValue="announcements">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="inbox">Inbox</TabsTrigger>
           <TabsTrigger value="message">Messages</TabsTrigger>
         </TabsList>
         <TabsContent value="announcements" className="mt-4"><AnnouncementFeed /></TabsContent>
-        <TabsContent value="inbox" className="mt-4"><NotificationsView audience="parent" /></TabsContent>
+        <TabsContent value="inbox" className="mt-4">
+          {isLive ? <LiveRepliesInbox onOpenMessages={() => setTab("message")} /> : <NotificationsView audience="parent" />}
+        </TabsContent>
         <TabsContent value="message" className="mt-4 space-y-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">New message</CardTitle></CardHeader>
