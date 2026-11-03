@@ -190,10 +190,10 @@ const mobileNav: Record<Portal, NavItem[]> = {
     { title: "Settings", icon: Settings, href: "/settings" },
   ],
   teacher: [
-    { title: "To-do", icon: ListTodo, href: "/staff/dashboard" },
+    { title: "Dashboard", icon: LayoutDashboard, href: "/staff/dashboard" },
+    { title: "Attendance", icon: CalendarCheck, href: "/teacher/attendance" },
     { title: "Homework", icon: BookOpen, href: "/teacher/homework" },
     { title: "Marks", icon: ClipboardCheck, href: "/teacher/marks" },
-    { title: "Remarks", icon: MessageSquare, href: "/teacher/remarks" },
     { title: "History", icon: Clock, href: "/teacher/attendance/history" },
     { title: "Payslip", icon: Wallet, href: "/teacher/payslip" },
     { title: "Settings", icon: Settings, href: "/settings" },
