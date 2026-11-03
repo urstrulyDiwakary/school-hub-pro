@@ -132,7 +132,7 @@ export default function StaffDashboard() {
     classesMarkedToday,
     studentsWithResults: resultStudents.data?.size ?? 0,
     totalStudents: students.data?.length ?? 0,
-    noticesLast7,
+    noticesLast7Days: noticesLast7,
     threadsAwaitingReply: waitingReply,
   });
 
