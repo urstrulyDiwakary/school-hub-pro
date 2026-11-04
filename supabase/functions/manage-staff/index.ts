@@ -42,6 +42,14 @@ Deno.serve(async (req) => {
     app_metadata: { staff_role: role },
   });
   if (error) return json({ error: error.message }, 400);
+  if (data.user) {
+    // The signup trigger can fire before app metadata is written, so the
+    // role is enforced here as the source of truth.
+    await admin.from("user_roles").delete().eq("user_id", data.user.id);
+    const { error: rErr } = await admin.from("user_roles")
+      .insert({ user_id: data.user.id, role });
+    if (rErr) return json({ error: rErr.message }, 400);
+  }
   if (role === "student" && data.user) {
     const { error: lErr } = await admin.from("parent_students")
       .insert(studentIds!.map((sid) => ({ parent_id: data.user!.id, student_id: sid })));
